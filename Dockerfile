@@ -28,6 +28,8 @@ RUN pip install --no-cache-dir \
     jupyterlab==4.5.5 \
     humanbound-cli==0.5.0
 
+RUN pip install --no-cache-dir "scipy<1.14" "giskard[llm]==2.19.1"
+
 RUN useradd -m -s /bin/bash deepcyber
 
 COPY start.sh /start.sh

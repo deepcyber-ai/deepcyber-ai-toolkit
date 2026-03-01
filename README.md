@@ -10,6 +10,8 @@ A containerised toolkit for AI/LLM red team engagements. Packages industry-stand
 | [Promptfoo](https://github.com/promptfoo/promptfoo) | 0.120.25 | LLM prompt evaluation and red teaming |
 | [Garak](https://github.com/NVIDIA/garak) | 0.14.0 | LLM vulnerability scanner |
 | [PyRIT](https://github.com/Azure/PyRIT) | 0.11.0 | Python Risk Identification Toolkit |
+| [Giskard](https://github.com/Giskard-AI/giskard-oss) | 2.19.1 | AI quality testing for performance, bias, and security issues |
+| [Giskard RAGET](https://docs.giskard.ai/en/latest/open_source/raget/index.html) | 2.19.1 | Automated evaluation dataset generation and testing for RAG applications |
 | [Inspect AI](https://github.com/UKGovernmentBEIS/inspect_ai) | 0.3.184 | A framework for large language model evaluations created by the UK AI Security Institute |
 | [ModelScan](https://github.com/protectai/modelscan) | 0.8.8 | ML model security scanner |
 | [FAISS](https://github.com/facebookresearch/faiss) | 1.13.2 | Vector similarity search |
