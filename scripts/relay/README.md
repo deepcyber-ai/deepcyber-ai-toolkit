@@ -31,6 +31,49 @@ Cloud Tool ──HTTPS──> Cloudflare Tunnel ──> Relay Proxy (laptop) ─
 | Tamper-evident audit | SHA-256 hash-chained JSONL logs for every request/response |
 | Localhost binding | Relay only listens on localhost — Cloudflare Tunnel handles exposure |
 
+## How It Works
+
+### Request flow
+
+1. The cloud tool sends a request to the tunnel URL (e.g. `https://xxxx.trycloudflare.com/v1/chat/completions`)
+2. Cloudflare routes it through the tunnel to `localhost:8443` on your laptop
+3. The relay proxy:
+   - Checks the `X-Relay-Secret` header (rejects if wrong or missing)
+   - Checks the rate limit
+   - Checks the path is allowed and not blocked
+   - Strips the `X-Relay-Secret` header so the internal API never sees it
+   - Injects `Authorization: Bearer <JWT>` so the cloud tool never sees the real token
+   - Forwards the request to the internal API
+   - Logs both request and response with tamper-evident hash chaining
+   - Returns the response back through the tunnel to the cloud tool
+
+From the cloud tool's perspective, it's just talking to a normal HTTPS API. It has no idea a relay exists.
+
+### Why no Cloudflare configuration is needed
+
+Cloudflare Tunnel has a "quick tunnel" mode that requires **zero configuration** — no account, no DNS setup, no dashboard:
+
+```bash
+brew install cloudflared        # one-time install
+cloudflared tunnel --url http://localhost:8443
+```
+
+What happens:
+
+1. `cloudflared` makes an **outbound** HTTPS connection to Cloudflare's edge on port 443
+2. Cloudflare assigns a random `*.trycloudflare.com` URL
+3. Any request to that URL gets routed back through the existing outbound connection to your localhost
+
+This works in restrictive networks because:
+
+- **Outbound only** — your laptop initiates the connection, no firewall rules need changing
+- **Port 443** — looks like normal HTTPS browsing traffic to the corporate network
+- **Ephemeral** — the URL is random and dies when you Ctrl-C, leaving no persistent infrastructure
+
+The relay binds to `127.0.0.1` only, so the tunnel is the *only* way in. The shared secret ensures that even if someone discovers the random URL, they can't use it without the header.
+
+For a persistent URL across restarts, you would need a Cloudflare account and a named tunnel (see [Cloudflare Tunnel Setup](#cloudflare-tunnel-setup) below).
+
 ## Quick Start
 
 ### 1. Configure
