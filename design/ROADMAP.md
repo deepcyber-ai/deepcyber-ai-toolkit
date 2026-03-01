@@ -91,6 +91,7 @@ Transition from a container toolkit to a full virtual machine appliance with Dee
 - [ ] Pre-configured Jupyter notebooks with example attacks
 - [ ] Report generation templates (HTML, PDF)
 - [ ] Centralised results dashboard
+- [ ] AI red team assistant — CLI agent that helps with tool selection, config generation, scan orchestration, and result interpretation. Model-agnostic (local via Ollama, cloud API, or client-provided endpoint).
 
 ### Engagement Workflow
 
