@@ -100,6 +100,73 @@ docker run --rm deepcyber-ai-toolkit:1.0 promptfoo --help
 docker run -it --rm -v $(pwd):/workspace deepcyber-ai-toolkit:1.0
 ```
 
+## Regulated Environment Mode
+
+For testing APIs in regulated environments (banking, healthcare, government) where you need strict control over data flow, telemetry, and audit trails.
+
+### Quick Start
+
+1. Copy the example config:
+
+```bash
+cp configs/regulated.env.example regulated.env
+```
+
+2. Edit `regulated.env` with your environment details:
+
+```bash
+# Point at your on-prem or private LLM endpoint
+OPENAI_API_BASE=https://llm.internal.corp.com/v1
+OPENAI_API_KEY=sk-your-key
+OPENAI_MODEL_NAME=gpt-4
+
+# Engagement metadata for audit trail
+ENGAGEMENT_ID=ENG-2026-042
+TESTER_NAME=Jane Smith
+CLIENT_NAME=Acme Corp
+CLASSIFICATION=CONFIDENTIAL
+```
+
+3. Launch:
+
+```bash
+./deepcyber.sh --regulated regulated.env
+```
+
+With corporate CA and proxy:
+
+```bash
+./deepcyber.sh --regulated regulated.env --ca corp-ca.crt
+```
+
+### What Regulated Mode Does
+
+| Control | Detail |
+|---------|--------|
+| Custom API endpoint | All tools route to `OPENAI_API_BASE` — no calls to public cloud |
+| Telemetry disabled | Promptfoo, DeepEval, Guardrails, HuggingFace Hub, PostHog, Scarf analytics all suppressed |
+| Audit logging | Every session start logged to `~/results/audit.log` with engagement ID, tester, timestamp |
+| Network isolation | Combined with `--proxy` and `NO_PROXY`, restricts traffic to approved endpoints |
+| Data classification | Classification level recorded in audit trail |
+
+### Audit Log
+
+The audit log is written to `~/results/audit.log` inside the container (mount a volume to persist it):
+
+```bash
+./deepcyber.sh --regulated regulated.env ~/engagement-output
+```
+
+The log captures session metadata and can be extended with the audit wrapper:
+
+```bash
+./scripts/audit-wrap.sh garak --config configs/garak/deepcyber.yaml
+```
+
+This logs the command, timestamp, engagement ID, and exit code.
+
+---
+
 ## On-Site / Corporate Proxy Deployment
 
 For engagements behind a corporate proxy with a custom CA certificate:
