@@ -30,6 +30,14 @@ RUN pip install --no-cache-dir \
 
 RUN pip install --no-cache-dir "scipy<1.14" "giskard[llm]==2.19.1"
 
+RUN pip install --no-cache-dir \
+    deepteam==1.0.5 \
+    llm-guard==0.3.16 \
+    nemoguardrails==0.20.0 \
+    deepeval==3.8.8 \
+    guardrails-ai==0.9.1 \
+    textattack==0.3.10
+
 RUN useradd -m -s /bin/bash deepcyber
 
 COPY start.sh /start.sh

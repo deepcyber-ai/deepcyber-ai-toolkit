@@ -16,6 +16,12 @@ A containerised toolkit for AI/LLM red team engagements. Packages industry-stand
 | [ModelScan](https://github.com/protectai/modelscan) | 0.8.8 | ML model security scanner |
 | [FAISS](https://github.com/facebookresearch/faiss) | 1.13.2 | Vector similarity search |
 | [ART](https://github.com/Trusted-AI/adversarial-robustness-toolbox) | 1.20.1 | Adversarial robustness testing |
+| [DeepTeam](https://github.com/confident-ai/deepteam) | 1.0.5 | OWASP-aligned LLM red teaming with 20+ attack types |
+| [TextAttack](https://github.com/QData/TextAttack) | 0.3.10 | Adversarial NLP attacks with 16 attack recipes |
+| [LLM Guard](https://github.com/protectai/llm-guard) | 0.3.16 | Input/output sanitisation and security scanning |
+| [NeMo Guardrails](https://github.com/NVIDIA-NeMo/Guardrails) | 0.20.0 | Programmable guardrails for LLM applications |
+| [Guardrails AI](https://github.com/guardrails-ai/guardrails) | 0.9.1 | LLM output validation framework |
+| [DeepEval](https://github.com/confident-ai/deepeval) | 3.8.8 | LLM evaluation with 14+ metrics including hallucination and toxicity |
 | [AIF360](https://github.com/Trusted-AI/AIF360) | 0.6.1 | AI fairness and bias detection |
 | [JupyterLab](https://github.com/jupyterlab/jupyterlab) | 4.5.5 | Interactive notebook environment |
 
