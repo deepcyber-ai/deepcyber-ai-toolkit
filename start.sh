@@ -18,8 +18,8 @@ if [ "${DEEPCYBER_REGULATED}" = "true" ]; then
     echo "  Tester:          ${TESTER_NAME:-unknown}"
     echo "  Client:          ${CLIENT_NAME:-unknown}"
     echo "  Classification:  ${CLASSIFICATION:-INTERNAL}"
-    echo "  API Base:        ${OPENAI_API_BASE:-not set}"
-    echo "  Model:           ${OPENAI_MODEL_NAME:-not set}"
+    echo "  Target API:      ${TARGET_API_BASE:-not set}"
+    echo "  Target Model:    ${TARGET_MODEL_NAME:-not set}"
     echo "============================================"
 
     # Disable telemetry for all tools
@@ -42,8 +42,8 @@ if [ "${DEEPCYBER_REGULATED}" = "true" ]; then
         echo "Tester: ${TESTER_NAME:-unknown}"
         echo "Client: ${CLIENT_NAME:-unknown}"
         echo "Classification: ${CLASSIFICATION:-INTERNAL}"
-        echo "API Base: ${OPENAI_API_BASE:-not set}"
-        echo "Model: ${OPENAI_MODEL_NAME:-not set}"
+        echo "Target API: ${TARGET_API_BASE:-not set}"
+        echo "Target Model: ${TARGET_MODEL_NAME:-not set}"
         echo "==========================="
     } >> "${AUDIT_LOG}"
 

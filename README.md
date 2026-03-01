@@ -115,10 +115,15 @@ cp configs/regulated.env.example regulated.env
 2. Edit `regulated.env` with your environment details:
 
 ```bash
-# Point at your on-prem or private LLM endpoint
-OPENAI_API_BASE=https://llm.internal.corp.com/v1
+# Point at your target API — any provider, not just OpenAI
+TARGET_API_BASE=https://llm.internal.corp.com/v1
+TARGET_MODEL_NAME=gpt-4
+
+# Auth — set only the keys relevant to your provider
 OPENAI_API_KEY=sk-your-key
-OPENAI_MODEL_NAME=gpt-4
+# ANTHROPIC_API_KEY=sk-ant-...
+# AZURE_OPENAI_API_KEY=...
+# AWS_ACCESS_KEY_ID=...
 
 # Engagement metadata for audit trail
 ENGAGEMENT_ID=ENG-2026-042
@@ -143,7 +148,7 @@ With corporate CA and proxy:
 
 | Control | Detail |
 |---------|--------|
-| Custom API endpoint | All tools route to `OPENAI_API_BASE` — no calls to public cloud |
+| Custom API endpoint | All tools route to `TARGET_API_BASE` — any provider (OpenAI, Anthropic, Azure, Bedrock, Ollama, vLLM, custom) |
 | Telemetry disabled | Promptfoo, DeepEval, Guardrails, HuggingFace Hub, PostHog, Scarf analytics all suppressed |
 | Audit logging | Every session start logged to `~/results/audit.log` with engagement ID, tester, timestamp |
 | Network isolation | Combined with `--proxy` and `NO_PROXY`, restricts traffic to approved endpoints |
