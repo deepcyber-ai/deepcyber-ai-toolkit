@@ -29,8 +29,9 @@ Thumbs.db
 # Claude Code
 .claude/
 
-# Design docs
-design/
+# Design docs (keep roadmap tracked)
+design/*
+!design/ROADMAP.md
 
 # Docker
 *.tar
