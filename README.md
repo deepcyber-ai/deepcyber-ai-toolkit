@@ -4,25 +4,47 @@ A containerised toolkit for AI/LLM red team engagements. Packages industry-stand
 
 ## Tools Included
 
+### Red Teaming and Attack Simulation
+
 | Tool | Version | Purpose |
 |------|---------|---------|
 | [HumanBound](https://github.com/humanbound/humanbound-cli) | 0.5.0 | Contextual red teaming for GenAI and Agentic applications |
 | [Promptfoo](https://github.com/promptfoo/promptfoo) | 0.120.25 | LLM prompt evaluation and red teaming |
 | [Garak](https://github.com/NVIDIA/garak) | 0.14.0 | LLM vulnerability scanner |
 | [PyRIT](https://github.com/Azure/PyRIT) | 0.11.0 | Python Risk Identification Toolkit |
-| [Giskard](https://github.com/Giskard-AI/giskard-oss) | 2.19.1 | AI quality testing for performance, bias, and security issues |
-| [Giskard RAGET](https://docs.giskard.ai/en/latest/open_source/raget/index.html) | 2.19.1 | Automated evaluation dataset generation and testing for RAG applications |
-| [Inspect AI](https://github.com/UKGovernmentBEIS/inspect_ai) | 0.3.184 | A framework for large language model evaluations created by the UK AI Security Institute |
-| [ModelScan](https://github.com/protectai/modelscan) | 0.8.8 | ML model security scanner |
-| [FAISS](https://github.com/facebookresearch/faiss) | 1.13.2 | Vector similarity search |
-| [ART](https://github.com/Trusted-AI/adversarial-robustness-toolbox) | 1.20.1 | Adversarial robustness testing |
 | [DeepTeam](https://github.com/confident-ai/deepteam) | 1.0.5 | OWASP-aligned LLM red teaming with 20+ attack types |
 | [TextAttack](https://github.com/QData/TextAttack) | 0.3.10 | Adversarial NLP attacks with 16 attack recipes |
+
+### Guardrails and Defensive Testing
+
+| Tool | Version | Purpose |
+|------|---------|---------|
 | [LLM Guard](https://github.com/protectai/llm-guard) | 0.3.16 | Input/output sanitisation and security scanning |
 | [NeMo Guardrails](https://github.com/NVIDIA-NeMo/Guardrails) | 0.20.0 | Programmable guardrails for LLM applications |
 | [Guardrails AI](https://github.com/guardrails-ai/guardrails) | 0.9.1 | LLM output validation framework |
+
+### Evaluation and Quality
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [Giskard](https://github.com/Giskard-AI/giskard-oss) | 2.19.1 | AI quality testing for performance, bias, and security issues |
+| [Giskard RAGET](https://docs.giskard.ai/en/latest/open_source/raget/index.html) | 2.19.1 | Automated evaluation dataset generation and testing for RAG applications |
+| [Inspect AI](https://github.com/UKGovernmentBEIS/inspect_ai) | 0.3.184 | A framework for large language model evaluations created by the UK AI Security Institute |
 | [DeepEval](https://github.com/confident-ai/deepeval) | 3.8.8 | LLM evaluation with 14+ metrics including hallucination and toxicity |
+
+### ML Security and Fairness
+
+| Tool | Version | Purpose |
+|------|---------|---------|
+| [ModelScan](https://github.com/protectai/modelscan) | 0.8.8 | ML model security scanner |
+| [ART](https://github.com/Trusted-AI/adversarial-robustness-toolbox) | 1.20.1 | Adversarial robustness testing |
+| [FAISS](https://github.com/facebookresearch/faiss) | 1.13.2 | Vector similarity search |
 | [AIF360](https://github.com/Trusted-AI/AIF360) | 0.6.1 | AI fairness and bias detection |
+
+### Environment
+
+| Tool | Version | Purpose |
+|------|---------|---------|
 | [JupyterLab](https://github.com/jupyterlab/jupyterlab) | 4.5.5 | Interactive notebook environment |
 
 ## Prerequisites
