@@ -37,6 +37,8 @@ COPY configs/ /home/deepcyber/configs/
 COPY scripts/ /home/deepcyber/scripts/
 RUN chmod +x /home/deepcyber/scripts/*.sh
 
+COPY samples/ /home/deepcyber/samples/
+
 RUN mkdir -p /home/deepcyber/results && \
     chown -R deepcyber:deepcyber /home/deepcyber
 

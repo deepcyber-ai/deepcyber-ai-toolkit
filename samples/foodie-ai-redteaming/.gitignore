@@ -1,0 +1,8 @@
+.env
+__pycache__/
+*.pyc
+bot.json
+node_modules/
+.promptfoo/
+output/
+*.log
