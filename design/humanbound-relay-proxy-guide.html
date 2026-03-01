@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HumanBound Relay Proxy — Implementation Guide</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111113;
+    --surface-2: #18181b;
+    --border: #27272a;
+    --border-subtle: #1e1e21;
+    --text: #fafafa;
+    --text-muted: #a1a1aa;
+    --text-dim: #71717a;
+    --accent: #f97316;
+    --accent-dim: #c2410c;
+    --green: #22c55e;
+    --green-dim: #166534;
+    --red: #ef4444;
+    --red-dim: #991b1b;
+    --blue: #3b82f6;
+    --blue-dim: #1e40af;
+    --yellow: #eab308;
+    --purple: #a855f7;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 60px 40px 100px;
+  }
+
+  /* Header */
+  .doc-header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 40px;
+    margin-bottom: 50px;
+  }
+
+  .doc-header .classification {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .doc-header .classification::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: var(--red);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  h1 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 48px;
+    font-weight: 400;
+    line-height: 1.15;
+    margin-bottom: 16px;
+    letter-spacing: -0.5px;
+  }
+
+  h1 span {
+    color: var(--accent);
+  }
+
+  .subtitle {
+    font-size: 17px;
+    color: var(--text-muted);
+    max-width: 600px;
+  }
+
+  .meta-row {
+    display: flex;
+    gap: 24px;
+    margin-top: 20px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .meta-row span { display: flex; align-items: center; gap: 6px; }
+
+  /* Sections */
+  section {
+    margin-bottom: 56px;
+  }
+
+  h2 {
+    font-family: 'Instrument Serif', serif;
+    font-size: 30px;
+    font-weight: 400;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text);
+    letter-spacing: 0.2px;
+  }
+
+  p {
+    color: var(--text-muted);
+    margin-bottom: 16px;
+    font-size: 15px;
+  }
+
+  strong { color: var(--text); font-weight: 600; }
+
+  /* Architecture Diagram */
+  .arch-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 40px;
+    margin: 24px 0 32px;
+    overflow-x: auto;
+  }
+
+  .arch-flow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    min-width: 700px;
+  }
+
+  .arch-node {
+    padding: 18px 22px;
+    border-radius: 10px;
+    text-align: center;
+    min-width: 160px;
+    position: relative;
+  }
+
+  .arch-node .label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .arch-node .name {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .arch-node .detail {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .node-cloud {
+    background: linear-gradient(135deg, #1e1b4b, #312e81);
+    border: 1px solid #4338ca;
+  }
+  .node-cloud .label { color: #818cf8; }
+
+  .node-laptop {
+    background: linear-gradient(135deg, var(--accent-dim), #b45309);
+    border: 1px solid var(--accent);
+  }
+  .node-laptop .label { color: #fed7aa; }
+
+  .node-api {
+    background: linear-gradient(135deg, var(--green-dim), #15803d);
+    border: 1px solid var(--green);
+  }
+  .node-api .label { color: #bbf7d0; }
+
+  .arch-arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 8px;
+    min-width: 100px;
+  }
+
+  .arch-arrow .arrow-line {
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    position: relative;
+  }
+
+  .arch-arrow .arrow-line::after {
+    content: '→';
+    position: absolute;
+    right: -4px;
+    top: -10px;
+    color: var(--text-dim);
+    font-size: 16px;
+  }
+
+  .arch-arrow .arrow-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .arch-arrow .arrow-label-top {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  .network-boundary {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 2px dashed var(--accent);
+    border-radius: 14px;
+    padding: 16px 20px;
+    position: relative;
+  }
+
+  .network-boundary::before {
+    content: 'LLOYDS NETWORK BOUNDARY';
+    position: absolute;
+    top: -10px;
+    left: 20px;
+    background: var(--surface);
+    padding: 0 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+
+  /* Code blocks */
+  .code-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 20px 0 28px;
+    overflow: hidden;
+  }
+
+  .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  .code-header .filename { color: var(--text-muted); }
+  .code-header .lang { color: var(--text-dim); font-size: 11px; }
+
+  .code-block pre {
+    padding: 20px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    line-height: 1.65;
+    color: var(--text-muted);
+  }
+
+  .code-block pre .comment { color: var(--text-dim); }
+  .code-block pre .keyword { color: var(--purple); }
+  .code-block pre .string { color: var(--green); }
+  .code-block pre .func { color: var(--blue); }
+  .code-block pre .decorator { color: var(--yellow); }
+  .code-block pre .highlight { color: var(--accent); }
+  .code-block pre .type { color: #22d3ee; }
+
+  /* Callout boxes */
+  .callout {
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+
+  .callout p { margin-bottom: 8px; font-size: 14px; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .callout-warn {
+    background: rgba(234, 179, 8, 0.08);
+    border: 1px solid rgba(234, 179, 8, 0.2);
+  }
+  .callout-warn .callout-title { color: var(--yellow); }
+
+  .callout-danger {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+  .callout-danger .callout-title { color: var(--red); }
+
+  .callout-info {
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px solid rgba(59, 130, 246, 0.2);
+  }
+  .callout-info .callout-title { color: var(--blue); }
+
+  .callout-success {
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.2);
+  }
+  .callout-success .callout-title { color: var(--green); }
+
+  .callout-title {
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  /* Risk table */
+  .risk-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    font-size: 14px;
+  }
+
+  .risk-table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+
+  .risk-table td {
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+
+  .risk-table tr:hover td { background: var(--surface); }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-low { background: rgba(34, 197, 94, 0.15); color: var(--green); }
+  .badge-med { background: rgba(234, 179, 8, 0.15); color: var(--yellow); }
+  .badge-high { background: rgba(239, 68, 68, 0.15); color: var(--red); }
+
+  /* Sequence diagram */
+  .sequence {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 32px;
+    margin: 20px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+
+  .seq-row {
+    display: grid;
+    grid-template-columns: 120px 1fr 120px;
+    gap: 12px;
+    margin-bottom: 12px;
+    align-items: center;
+  }
+
+  .seq-actor {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  .seq-msg {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+  }
+
+  .seq-msg .arrow { color: var(--accent); }
+  .seq-msg .msg { color: var(--text-muted); font-size: 12px; }
+  .seq-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--bg);
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Steps */
+  .step-list {
+    list-style: none;
+    margin: 20px 0;
+  }
+
+  .step-list li {
+    display: flex;
+    gap: 16px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 14px;
+    color: var(--text-muted);
+  }
+
+  .step-list li:last-child { border-bottom: none; }
+
+  .step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  /* Footer */
+  .doc-footer {
+    margin-top: 60px;
+    padding-top: 30px;
+    border-top: 1px solid var(--border);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  .inline-code {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    background: var(--surface-2);
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    color: var(--accent);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="doc-header">
+    <div class="classification">Engagement Confidential — Red Team Infrastructure</div>
+    <h1>HumanBound <span>Relay Proxy</span></h1>
+    <p class="subtitle">Local relay architecture enabling HumanBound cloud execution against a network-restricted internal API at Lloyds Banking Group.</p>
+    <div class="meta-row">
+      <span>Version 1.0</span>
+      <span>|</span>
+      <span>February 2026</span>
+      <span>|</span>
+      <span>FCA-regulated environment</span>
+    </div>
+  </header>
+
+  <!-- PROBLEM STATEMENT -->
+  <section>
+    <h2>The Problem</h2>
+    <p>HumanBound operates as a cloud-hosted execution engine. It generates payloads, sends them to the target API, observes responses, and <strong>adapts in real-time</strong> — the intelligence is in the feedback loop. It cannot be reduced to a job queue.</p>
+    <p>The target API at Lloyds is <strong>not internet-facing</strong>. It sits behind private DNS, IP restriction, and proxy enforcement. HumanBound's cloud infrastructure cannot reach it.</p>
+    <p>Your laptop, when on the Lloyds network, <strong>can</strong> reach the API. The solution: make your laptop a transparent relay so HumanBound cloud believes it's talking directly to the API.</p>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section>
+    <h2>Architecture</h2>
+
+    <div class="arch-diagram">
+      <div class="arch-flow">
+        <div class="arch-node node-cloud">
+          <div class="label">Cloud</div>
+          <div class="name">HumanBound</div>
+          <div class="detail">Test engine</div>
+        </div>
+
+        <div class="arch-arrow">
+          <div class="arrow-label-top">HTTPS :443</div>
+          <div class="arrow-line"></div>
+          <div class="arrow-label">Outbound from laptop<br>(reverse SSH / ngrok / CF tunnel)</div>
+        </div>
+
+        <div class="network-boundary">
+          <div class="arch-node node-laptop">
+            <div class="label">Your machine</div>
+            <div class="name">Relay Proxy</div>
+            <div class="detail">localhost:8443</div>
+          </div>
+
+          <div class="arch-arrow">
+            <div class="arrow-label-top">HTTP/HTTPS</div>
+            <div class="arrow-line"></div>
+            <div class="arrow-label">Internal network</div>
+          </div>
+
+          <div class="arch-node node-api">
+            <div class="label">Target</div>
+            <div class="name">Lloyds API</div>
+            <div class="detail">internal.api.lloyds</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p>The relay proxy runs on your laptop inside the Lloyds network. It receives requests from HumanBound via a secure tunnel, forwards them to the internal API, and returns responses. HumanBound never touches the internal network directly — all traffic transits through your controlled, auditable relay.</p>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section>
+    <h2>Request Flow</h2>
+
+    <div class="sequence">
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+        <div class="seq-actor">HumanBound Cloud</div>
+        <div class="seq-actor">Your Laptop (Relay)</div>
+        <div class="seq-actor">Lloyds Internal API</div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="seq-num">1</span>
+          <span class="msg" style="color: var(--text-muted);">HumanBound sends test payload → tunnel → relay proxy on localhost:8443</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="seq-num">2</span>
+          <span class="msg" style="color: var(--text-muted);">Relay logs the request (headers, body, timestamp) to audit file</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="seq-num">3</span>
+          <span class="msg" style="color: var(--text-muted);">Relay injects/refreshes JWT bearer token for internal API auth</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="seq-num">4</span>
+          <span class="msg" style="color: var(--text-muted);">Relay forwards request to internal API (rewriting Host, path as needed)</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="seq-num">5</span>
+          <span class="msg" style="color: var(--text-muted);">Internal API responds</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="seq-num">6</span>
+          <span class="msg" style="color: var(--text-muted);">Relay logs the response, returns it through tunnel to HumanBound</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span class="seq-num">7</span>
+          <span class="msg" style="color: var(--text-muted);">HumanBound analyses response, generates next adaptive payload → repeat</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TUNNEL OPTIONS -->
+  <section>
+    <h2>Tunnel Options</h2>
+    <p>You need a way for HumanBound cloud to reach your laptop's relay proxy. The tunnel must be <strong>outbound-initiated</strong> from your laptop (no inbound firewall changes). Here are the realistic options ranked by bank-friendliness:</p>
+
+    <table class="risk-table">
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>How it works</th>
+          <th>SOC Risk</th>
+          <th>Setup</th>
+          <th>Bank-friendly</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Cloudflare Tunnel</strong></td>
+          <td>Outbound HTTPS to Cloudflare edge. No open ports. Looks like normal web traffic.</td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td><span class="badge badge-low">Simple</span></td>
+          <td><span class="badge badge-low">Best</span></td>
+        </tr>
+        <tr>
+          <td><strong>ngrok</strong></td>
+          <td>Outbound to ngrok's edge. Gives you a public URL.</td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td><span class="badge badge-low">Simple</span></td>
+          <td><span class="badge badge-med">OK</span></td>
+        </tr>
+        <tr>
+          <td><strong>SSH reverse tunnel</strong></td>
+          <td>SSH -R to your VPS. Expose relay port via VPS.</td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td><span class="badge badge-med">Moderate</span></td>
+          <td><span class="badge badge-med">OK</span></td>
+        </tr>
+        <tr>
+          <td><strong>WireGuard / Tailscale</strong></td>
+          <td>Encrypted mesh VPN. Laptop joins your private net.</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td><span class="badge badge-med">Moderate</span></td>
+          <td><span class="badge badge-high">Risky</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-info">
+      <div class="callout-title">Recommendation</div>
+      <p><strong>Cloudflare Tunnel</strong> is the strongest option for a bank environment. It's outbound-only HTTPS on port 443, passes through corporate proxies transparently, and leaves no listening ports on your machine. You control the tunnel from a Cloudflare dashboard and can kill it instantly. If they ask what it is, it's a "secure application access tunnel" — the same technology Cloudflare sells to banks for zero-trust access.</p>
+    </div>
+  </section>
+
+  <!-- IMPLEMENTATION -->
+  <section>
+    <h2>Implementation: The Relay Proxy</h2>
+    <p>This is the core component — a Python reverse proxy running on your laptop that receives HumanBound traffic, handles JWT auth, forwards to the internal API, and logs everything for FCA compliance.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="filename">relay_proxy.py</span>
+        <span class="lang">Python 3.10+</span>
+      </div>
+      <pre><span class="comment">#!/usr/bin/env python3</span>
+<span class="comment">"""
+HumanBound Relay Proxy
+Sits on your laptop inside the Lloyds network.
+Receives requests from HumanBound cloud via tunnel,
+forwards to internal API, returns responses.
+All requests/responses logged for FCA audit trail.
+"""</span>
+
+<span class="keyword">import</span> json, time, uuid, hashlib, logging, os, sys
+<span class="keyword">from</span> datetime <span class="keyword">import</span> datetime, timezone
+<span class="keyword">from</span> pathlib <span class="keyword">import</span> Path
+
+<span class="keyword">try</span>:
+    <span class="keyword">from</span> flask <span class="keyword">import</span> Flask, request, Response
+    <span class="keyword">import</span> requests <span class="keyword">as</span> http_client
+<span class="keyword">except</span> ImportError:
+    print(<span class="string">"pip install flask requests"</span>)
+    sys.exit(1)
+
+<span class="comment"># ── Configuration ──────────────────────────────────────</span>
+
+<span class="highlight">TARGET_API_BASE</span>    = os.getenv(<span class="string">"TARGET_API"</span>, <span class="string">"https://internal-api.lloyds.com"</span>)
+<span class="highlight">LISTEN_PORT</span>        = int(os.getenv(<span class="string">"RELAY_PORT"</span>, <span class="string">"8443"</span>))
+<span class="highlight">SHARED_SECRET</span>      = os.getenv(<span class="string">"RELAY_SECRET"</span>, <span class="string">"CHANGE_ME_TO_RANDOM_SECRET"</span>)
+<span class="highlight">JWT_TOKEN</span>          = os.getenv(<span class="string">"JWT_TOKEN"</span>, <span class="string">""</span>)
+<span class="highlight">LOG_DIR</span>            = Path(os.getenv(<span class="string">"LOG_DIR"</span>, <span class="string">"./audit_logs"</span>))
+<span class="highlight">ALLOWED_PATHS</span>      = os.getenv(<span class="string">"ALLOWED_PATHS"</span>, <span class="string">""</span>).split(<span class="string">","</span>) <span class="keyword">if</span> os.getenv(<span class="string">"ALLOWED_PATHS"</span>) <span class="keyword">else</span> []
+<span class="highlight">RATE_LIMIT_RPS</span>     = int(os.getenv(<span class="string">"RATE_LIMIT"</span>, <span class="string">"10"</span>))
+
+<span class="comment"># ── Setup ──────────────────────────────────────────────</span>
+
+app = Flask(__name__)
+LOG_DIR.mkdir(parents=<span class="keyword">True</span>, exist_ok=<span class="keyword">True</span>)
+
+<span class="comment"># Structured audit logger — tamper-evident with chained hashes</span>
+audit_log_path = LOG_DIR / f<span class="string">"relay_audit_{datetime.now().strftime('%Y%m%d_%H%M%S')}.jsonl"</span>
+seq_counter = 0
+prev_hash = <span class="string">"GENESIS"</span>
+
+logging.basicConfig(
+    level=logging.INFO,
+    format=<span class="string">"%(asctime)s [%(levelname)s] %(message)s"</span>
+)
+log = logging.getLogger(<span class="string">"relay"</span>)
+
+<span class="comment"># Simple rate limiter</span>
+request_times = []
+
+<span class="comment"># ── Audit Logging ──────────────────────────────────────</span>
+
+<span class="keyword">def</span> <span class="func">audit_log</span>(entry: dict):
+    <span class="string">"""Append a tamper-evident log entry with chained SHA-256 hashes."""</span>
+    <span class="keyword">global</span> seq_counter, prev_hash
+    seq_counter += 1
+    entry[<span class="string">"seq"</span>] = seq_counter
+    entry[<span class="string">"timestamp"</span>] = datetime.now(timezone.utc).isoformat()
+    entry[<span class="string">"prev_hash"</span>] = prev_hash
+
+    <span class="comment"># Chain hash: SHA-256 of previous hash + current entry</span>
+    raw = json.dumps(entry, sort_keys=<span class="keyword">True</span>)
+    entry[<span class="string">"hash"</span>] = hashlib.sha256(
+        f<span class="string">"{prev_hash}:{raw}"</span>.encode()
+    ).hexdigest()
+    prev_hash = entry[<span class="string">"hash"</span>]
+
+    <span class="keyword">with</span> open(audit_log_path, <span class="string">"a"</span>) <span class="keyword">as</span> f:
+        f.write(json.dumps(entry) + <span class="string">"\n"</span>)
+
+<span class="comment"># ── Rate Limiting ──────────────────────────────────────</span>
+
+<span class="keyword">def</span> <span class="func">check_rate_limit</span>() -> bool:
+    now = time.time()
+    request_times[:] = [t <span class="keyword">for</span> t <span class="keyword">in</span> request_times <span class="keyword">if</span> now - t &lt; 1.0]
+    <span class="keyword">if</span> len(request_times) >= RATE_LIMIT_RPS:
+        <span class="keyword">return</span> <span class="keyword">False</span>
+    request_times.append(now)
+    <span class="keyword">return</span> <span class="keyword">True</span>
+
+<span class="comment"># ── Auth Verification ──────────────────────────────────</span>
+
+<span class="keyword">def</span> <span class="func">verify_caller</span>() -> bool:
+    <span class="string">"""Verify the request is from HumanBound via shared secret."""</span>
+    token = request.headers.get(<span class="string">"X-Relay-Secret"</span>, <span class="string">""</span>)
+    <span class="keyword">return</span> token == SHARED_SECRET
+
+<span class="comment"># ── Path Filtering ─────────────────────────────────────</span>
+
+<span class="keyword">def</span> <span class="func">is_path_allowed</span>(path: str) -> bool:
+    <span class="string">"""If ALLOWED_PATHS is set, only permit those prefixes."""</span>
+    <span class="keyword">if not</span> ALLOWED_PATHS <span class="keyword">or</span> ALLOWED_PATHS == [<span class="string">""</span>]:
+        <span class="keyword">return</span> <span class="keyword">True</span>
+    <span class="keyword">return</span> any(path.startswith(p.strip()) <span class="keyword">for</span> p <span class="keyword">in</span> ALLOWED_PATHS)
+
+<span class="comment"># ── Core Relay Handler ─────────────────────────────────</span>
+
+<span class="decorator">@app.route</span>(<span class="string">"/"</span>, defaults={<span class="string">"path"</span>: <span class="string">""</span>}, methods=[
+    <span class="string">"GET"</span>, <span class="string">"POST"</span>, <span class="string">"PUT"</span>, <span class="string">"PATCH"</span>, <span class="string">"DELETE"</span>, <span class="string">"OPTIONS"</span>, <span class="string">"HEAD"</span>
+])
+<span class="decorator">@app.route</span>(<span class="string">"/<span class="type">path:path</span>>"</span>, methods=[
+    <span class="string">"GET"</span>, <span class="string">"POST"</span>, <span class="string">"PUT"</span>, <span class="string">"PATCH"</span>, <span class="string">"DELETE"</span>, <span class="string">"OPTIONS"</span>, <span class="string">"HEAD"</span>
+])
+<span class="keyword">def</span> <span class="func">relay</span>(path):
+    request_id = str(uuid.uuid4())[:8]
+
+    <span class="comment"># ── Gate checks ──</span>
+    <span class="keyword">if not</span> verify_caller():
+        audit_log({<span class="string">"event"</span>: <span class="string">"AUTH_REJECTED"</span>, <span class="string">"id"</span>: request_id,
+                   <span class="string">"src"</span>: request.remote_addr})
+        <span class="keyword">return</span> Response(<span class="string">"Unauthorized"</span>, status=401)
+
+    <span class="keyword">if not</span> check_rate_limit():
+        audit_log({<span class="string">"event"</span>: <span class="string">"RATE_LIMITED"</span>, <span class="string">"id"</span>: request_id})
+        <span class="keyword">return</span> Response(<span class="string">"Rate limited"</span>, status=429)
+
+    <span class="keyword">if not</span> is_path_allowed(f<span class="string">"/{path}"</span>):
+        audit_log({<span class="string">"event"</span>: <span class="string">"PATH_BLOCKED"</span>, <span class="string">"id"</span>: request_id,
+                   <span class="string">"path"</span>: path})
+        <span class="keyword">return</span> Response(<span class="string">"Path not allowed"</span>, status=403)
+
+    <span class="comment"># ── Build target request ──</span>
+    target_url = f<span class="string">"{TARGET_API_BASE}/{path}"</span>
+    <span class="keyword">if</span> request.query_string:
+        target_url += f<span class="string">"?{request.query_string.decode()}"</span>
+
+    <span class="comment"># Forward headers, strip relay-specific ones</span>
+    headers = {k: v <span class="keyword">for</span> k, v <span class="keyword">in</span> request.headers
+               <span class="keyword">if</span> k.lower() <span class="keyword">not in</span> (
+                   <span class="string">"host"</span>, <span class="string">"x-relay-secret"</span>,
+                   <span class="string">"transfer-encoding"</span>
+               )}
+
+    <span class="comment"># Inject JWT if configured</span>
+    <span class="keyword">if</span> JWT_TOKEN:
+        headers[<span class="string">"Authorization"</span>] = f<span class="string">"Bearer {JWT_TOKEN}"</span>
+
+    body = request.get_data()
+
+    <span class="comment"># ── Log request ──</span>
+    audit_log({
+        <span class="string">"event"</span>: <span class="string">"REQUEST"</span>,
+        <span class="string">"id"</span>: request_id,
+        <span class="string">"method"</span>: request.method,
+        <span class="string">"target"</span>: target_url,
+        <span class="string">"body_size"</span>: len(body),
+        <span class="string">"body_preview"</span>: body[:500].decode(<span class="string">"utf-8"</span>, errors=<span class="string">"replace"</span>)
+    })
+
+    <span class="comment"># ── Forward to internal API ──</span>
+    <span class="keyword">try</span>:
+        resp = http_client.request(
+            method=request.method,
+            url=target_url,
+            headers=headers,
+            data=body,
+            timeout=30,
+            verify=<span class="keyword">True</span>,
+            allow_redirects=<span class="keyword">False</span>
+        )
+    <span class="keyword">except</span> Exception <span class="keyword">as</span> e:
+        audit_log({
+            <span class="string">"event"</span>: <span class="string">"TARGET_ERROR"</span>,
+            <span class="string">"id"</span>: request_id,
+            <span class="string">"error"</span>: str(e)
+        })
+        <span class="keyword">return</span> Response(f<span class="string">"Relay error: {e}"</span>, status=502)
+
+    <span class="comment"># ── Log response ──</span>
+    audit_log({
+        <span class="string">"event"</span>: <span class="string">"RESPONSE"</span>,
+        <span class="string">"id"</span>: request_id,
+        <span class="string">"status"</span>: resp.status_code,
+        <span class="string">"body_size"</span>: len(resp.content),
+        <span class="string">"body_preview"</span>: resp.content[:500].decode(
+            <span class="string">"utf-8"</span>, errors=<span class="string">"replace"</span>)
+    })
+
+    <span class="comment"># ── Return to HumanBound ──</span>
+    excluded_headers = {<span class="string">"transfer-encoding"</span>, <span class="string">"content-encoding"</span>,
+                        <span class="string">"content-length"</span>, <span class="string">"connection"</span>}
+    response_headers = {k: v <span class="keyword">for</span> k, v <span class="keyword">in</span> resp.headers.items()
+                        <span class="keyword">if</span> k.lower() <span class="keyword">not in</span> excluded_headers}
+
+    <span class="keyword">return</span> Response(
+        resp.content,
+        status=resp.status_code,
+        headers=response_headers
+    )
+
+<span class="comment"># ── Health Check ───────────────────────────────────────</span>
+
+<span class="decorator">@app.route</span>(<span class="string">"/__relay/health"</span>)
+<span class="keyword">def</span> <span class="func">health</span>():
+    <span class="keyword">return</span> {
+        <span class="string">"status"</span>: <span class="string">"ok"</span>,
+        <span class="string">"target"</span>: TARGET_API_BASE,
+        <span class="string">"uptime_requests"</span>: seq_counter,
+        <span class="string">"log_file"</span>: str(audit_log_path)
+    }
+
+<span class="comment"># ── Status Page ────────────────────────────────────────</span>
+
+<span class="decorator">@app.route</span>(<span class="string">"/__relay/stats"</span>)
+<span class="keyword">def</span> <span class="func">stats</span>():
+    <span class="keyword">if not</span> verify_caller():
+        <span class="keyword">return</span> Response(<span class="string">"Unauthorized"</span>, status=401)
+    <span class="keyword">return</span> {
+        <span class="string">"total_requests"</span>: seq_counter,
+        <span class="string">"log_file"</span>: str(audit_log_path),
+        <span class="string">"log_size_bytes"</span>: audit_log_path.stat().st_size
+            <span class="keyword">if</span> audit_log_path.exists() <span class="keyword">else</span> 0,
+        <span class="string">"target"</span>: TARGET_API_BASE,
+        <span class="string">"rate_limit"</span>: RATE_LIMIT_RPS,
+        <span class="string">"path_filter"</span>: ALLOWED_PATHS <span class="keyword">or</span> <span class="string">"ALL"</span>
+    }
+
+<span class="comment"># ── Entry Point ────────────────────────────────────────</span>
+
+<span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
+    log.info(f<span class="string">"╔══════════════════════════════════════════╗"</span>)
+    log.info(f<span class="string">"║  HumanBound Relay Proxy                  ║"</span>)
+    log.info(f<span class="string">"║  Target: {TARGET_API_BASE:&lt;30} ║"</span>)
+    log.info(f<span class="string">"║  Port:   {LISTEN_PORT:&lt;30} ║"</span>)
+    log.info(f<span class="string">"║  Log:    {str(audit_log_path):&lt;30} ║"</span>)
+    log.info(f<span class="string">"╚══════════════════════════════════════════╝"</span>)
+
+    <span class="keyword">if</span> SHARED_SECRET == <span class="string">"CHANGE_ME_TO_RANDOM_SECRET"</span>:
+        log.warning(<span class="string">"⚠ USING DEFAULT SECRET — set RELAY_SECRET env var!"</span>)
+
+    app.run(
+        host=<span class="string">"127.0.0.1"</span>,   <span class="comment"># localhost only — tunnel handles exposure</span>
+        port=LISTEN_PORT,
+        debug=<span class="keyword">False</span>
+    )</pre>
+    </div>
+  </section>
+
+  <!-- RUNNING IT -->
+  <section>
+    <h2>Running It</h2>
+
+    <h3>Step 1 — Install dependencies on your laptop</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="filename">Terminal</span>
+        <span class="lang">bash</span>
+      </div>
+      <pre>pip install flask requests</pre>
+    </div>
+
+    <h3>Step 2 — Configure and start the relay</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="filename">Terminal</span>
+        <span class="lang">bash</span>
+      </div>
+      <pre><span class="comment"># Set your target API and a strong shared secret</span>
+export TARGET_API=<span class="string">"https://internal-api.lloyds.com/v1"</span>
+export RELAY_SECRET=<span class="string">"$(openssl rand -hex 32)"</span>
+export JWT_TOKEN=<span class="string">"your-jwt-token-here"</span>
+export RELAY_PORT=<span class="string">"8443"</span>
+
+<span class="comment"># Optional: restrict to specific API paths only</span>
+export ALLOWED_PATHS=<span class="string">"/api/v1/chat,/api/v1/completions"</span>
+
+<span class="comment"># Start the relay</span>
+python relay_proxy.py</pre>
+    </div>
+
+    <h3>Step 3 — Establish the tunnel (Cloudflare example)</h3>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="filename">Terminal (second tab)</span>
+        <span class="lang">bash</span>
+      </div>
+      <pre><span class="comment"># Install cloudflared (if not already)</span>
+brew install cloudflared   <span class="comment"># or download binary</span>
+
+<span class="comment"># Quick tunnel — gives you a public URL instantly</span>
+cloudflared tunnel --url http://localhost:8443
+
+<span class="comment"># Output will show something like:</span>
+<span class="comment"># https://random-name-here.trycloudflare.com</span>
+<span class="comment"># ↑ Give THIS URL to HumanBound as the target API endpoint</span></pre>
+    </div>
+
+    <h3>Step 4 — Point HumanBound at the tunnel URL</h3>
+    <p>In your HumanBound configuration, set the target API URL to the Cloudflare tunnel URL. HumanBound will send requests to that URL, which routes through the tunnel to your laptop's relay proxy, which forwards to the real internal API.</p>
+
+    <div class="callout callout-warn">
+      <div class="callout-title">Important: JWT management</div>
+      <p>The relay injects the JWT token you provide via the <span class="inline-code">JWT_TOKEN</span> env var. When the token expires, you'll need to refresh it. For short-lived tokens, you should extend the relay to call the bank's token endpoint automatically — add a <span class="inline-code">refresh_jwt()</span> function that runs before token expiry.</p>
+    </div>
+  </section>
+
+  <!-- HUMANBOUND CONFIG -->
+  <section>
+    <h2>HumanBound Configuration</h2>
+    <p>When configuring HumanBound to test the API, you need to tell it to include the relay authentication header on every request:</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="filename">HumanBound config</span>
+        <span class="lang">yaml / json</span>
+      </div>
+      <pre><span class="comment"># Target URL is your Cloudflare tunnel, NOT the real API</span>
+target_url: <span class="string">"https://random-name-here.trycloudflare.com"</span>
+
+<span class="comment"># Add relay auth header so the proxy accepts the request</span>
+custom_headers:
+  X-Relay-Secret: <span class="string">"your-64-char-hex-secret"</span>
+
+<span class="comment"># Do NOT set Authorization header — the relay injects it</span>
+<span class="comment"># HumanBound sends payloads → tunnel → relay → real API</span></pre>
+    </div>
+
+    <div class="callout callout-success">
+      <div class="callout-title">What HumanBound sees</div>
+      <p>From HumanBound's perspective, it's just testing an API at a normal HTTPS URL. It has no idea a relay exists. It sends requests, gets responses, and runs its adaptive test logic as normal. The relay is transparent.</p>
+    </div>
+  </section>
+
+  <!-- AUDIT & FCA -->
+  <section>
+    <h2>Audit Trail & FCA Compliance</h2>
+    <p>The relay produces a <strong>tamper-evident JSONL audit log</strong> with chained SHA-256 hashes. Every entry contains a hash of itself plus the previous entry's hash, forming a verifiable chain. If any line is modified or deleted, the chain breaks.</p>
+
+    <div class="code-block">
+      <div class="code-header">
+        <span class="filename">audit_logs/relay_audit_20260227_091500.jsonl</span>
+        <span class="lang">jsonl (one entry per line)</span>
+      </div>
+      <pre>{
+  "seq": 1,
+  "timestamp": "2026-02-27T09:15:00.123Z",
+  "event": "REQUEST",
+  "id": "a1b2c3d4",
+  "method": "POST",
+  "target": "https://internal-api.lloyds.com/v1/chat",
+  "body_size": 245,
+  "body_preview": "{\"messages\":[{\"role\":\"user\",\"content\":\"ignore...",
+  "prev_hash": "GENESIS",
+  "hash": "e3b0c44298fc1c149afb..."
+}
+{
+  "seq": 2,
+  "timestamp": "2026-02-27T09:15:00.456Z",
+  "event": "RESPONSE",
+  "id": "a1b2c3d4",
+  "status": 200,
+  "body_size": 1024,
+  "body_preview": "{\"choices\":[{\"message\":{\"content\":\"I'm sorry...",
+  "prev_hash": "e3b0c44298fc1c149afb...",
+  "hash": "7d865e959b2466918c..."
+}</pre>
+    </div>
+
+    <p>To verify log integrity after the engagement:</p>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="filename">verify_audit.py</span>
+        <span class="lang">Python</span>
+      </div>
+      <pre><span class="keyword">import</span> json, hashlib
+
+prev = <span class="string">"GENESIS"</span>
+<span class="keyword">with</span> open(<span class="string">"audit_logs/relay_audit_20260227_091500.jsonl"</span>) <span class="keyword">as</span> f:
+    <span class="keyword">for</span> i, line <span class="keyword">in</span> enumerate(f, 1):
+        entry = json.loads(line)
+        stored_hash = entry.pop(<span class="string">"hash"</span>)
+        raw = json.dumps(entry, sort_keys=<span class="keyword">True</span>)
+        expected = hashlib.sha256(f<span class="string">"{prev}:{raw}"</span>.encode()).hexdigest()
+        <span class="keyword">assert</span> stored_hash == expected, f<span class="string">"CHAIN BROKEN at seq {i}"</span>
+        prev = stored_hash
+
+print(f<span class="string">"✓ All {i} entries verified. Chain intact."</span>)</pre>
+    </div>
+  </section>
+
+  <!-- SECURITY HARDENING -->
+  <section>
+    <h2>Security Hardening</h2>
+
+    <ul class="step-list">
+      <li>
+        <span class="step-num">1</span>
+        <div><strong>Localhost binding only.</strong> The relay binds to 127.0.0.1 — it never listens on the network interface. Only the tunnel can reach it. Nobody on the Lloyds network can hit your relay directly.</div>
+      </li>
+      <li>
+        <span class="step-num">2</span>
+        <div><strong>Shared secret authentication.</strong> Every request must carry the X-Relay-Secret header. Without it, the relay returns 401. This prevents anyone who discovers the tunnel URL from using it.</div>
+      </li>
+      <li>
+        <span class="step-num">3</span>
+        <div><strong>Path allowlisting.</strong> Set ALLOWED_PATHS to restrict which API endpoints HumanBound can hit. If the target API has admin endpoints you shouldn't touch, block them here.</div>
+      </li>
+      <li>
+        <span class="step-num">4</span>
+        <div><strong>Rate limiting.</strong> Default 10 requests/second. Prevents runaway test loops from hammering the internal API and triggering production alerts.</div>
+      </li>
+      <li>
+        <span class="step-num">5</span>
+        <div><strong>Tamper-evident logging.</strong> Chained hashes mean you can prove no log entries were added, removed, or modified after the fact. Critical for FCA evidence.</div>
+      </li>
+      <li>
+        <span class="step-num">6</span>
+        <div><strong>Kill switch.</strong> Close the terminal running cloudflared and the tunnel dies instantly. No persistent access. No cleanup needed.</div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- WHAT TO TELL LLOYDS -->
+  <section>
+    <h2>What to Tell Lloyds</h2>
+
+    <div class="callout callout-info">
+      <div class="callout-title">Recommended framing</div>
+      <p><em>"Our testing methodology uses an AI-powered red team engine for adaptive payload generation. To maintain the integrity of automated testing while operating within your network boundary, we deploy a lightweight, auditable relay process on the provisioned test laptop. All API calls originate from within your network. The relay maintains a tamper-evident audit log of every request and response for post-engagement review. No inbound connections are opened. The relay can be terminated instantly and leaves no persistent access."</em></p>
+    </div>
+
+    <p>Key points to emphasise:</p>
+    <ul class="step-list">
+      <li>
+        <span class="step-num">→</span>
+        <div>All API requests originate from <strong>their device, on their network</strong></div>
+      </li>
+      <li>
+        <span class="step-num">→</span>
+        <div>No inbound firewall changes required</div>
+      </li>
+      <li>
+        <span class="step-num">→</span>
+        <div>Full audit log with cryptographic integrity chain</div>
+      </li>
+      <li>
+        <span class="step-num">→</span>
+        <div>Path-restricted — only approved endpoints are reachable</div>
+      </li>
+      <li>
+        <span class="step-num">→</span>
+        <div>Instant kill switch — close the tunnel, access ends</div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- RISKS -->
+  <section>
+    <h2>Honest Risk Assessment</h2>
+
+    <table class="risk-table">
+      <thead>
+        <tr>
+          <th>Risk</th>
+          <th>Severity</th>
+          <th>Mitigation</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>SOC detects tunnel traffic</td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td>Pre-notify SOC. Cloudflare traffic on 443 looks like normal HTTPS. Provide them the tunnel hostname so they can whitelist monitoring.</td>
+        </tr>
+        <tr>
+          <td>Tunnel URL leaked</td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td>Shared secret means leaked URL is useless without the header. Tunnel URLs are random and short-lived.</td>
+        </tr>
+        <tr>
+          <td>JWT expires mid-test</td>
+          <td><span class="badge badge-med">Medium</span></td>
+          <td>Extend relay with auto-refresh. Or use long-lived service account token for testing period.</td>
+        </tr>
+        <tr>
+          <td>Relay crashes / laptop sleeps</td>
+          <td><span class="badge badge-low">Low</span></td>
+          <td>HumanBound gets connection errors, pauses. Restart relay, resume. No data loss — log is append-only.</td>
+        </tr>
+        <tr>
+          <td>Bank policy prohibits tunnels</td>
+          <td><span class="badge badge-high">High</span></td>
+          <td>This is the real blocker. If they say no tunnels, you fall back to Option 3 (manual execution). Confirm policy before building.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-danger">
+      <div class="callout-title">Critical: Get approval first</div>
+      <p>Do <strong>not</strong> deploy this without written approval from the Lloyds engagement lead. Even though it's technically low-risk, deploying an unapproved tunnel in a bank will end the engagement. Frame it properly, get it signed off, then deploy.</p>
+    </div>
+  </section>
+
+  <!-- QUICK REFERENCE -->
+  <section>
+    <h2>Quick Reference</h2>
+    <div class="code-block">
+      <div class="code-header">
+        <span class="filename">Commands</span>
+        <span class="lang">cheatsheet</span>
+      </div>
+      <pre><span class="comment"># Start relay</span>
+TARGET_API=https://internal.api RELAY_SECRET=$(openssl rand -hex 32) python relay_proxy.py
+
+<span class="comment"># Start tunnel (Cloudflare)</span>
+cloudflared tunnel --url http://localhost:8443
+
+<span class="comment"># Start tunnel (ngrok alternative)</span>
+ngrok http 8443
+
+<span class="comment"># Start tunnel (SSH reverse tunnel alternative)</span>
+ssh -R 8443:localhost:8443 user@your-vps.com
+
+<span class="comment"># Health check</span>
+curl http://localhost:8443/__relay/health
+
+<span class="comment"># Verify audit log</span>
+python verify_audit.py
+
+<span class="comment"># Kill everything</span>
+<span class="comment"># Ctrl+C both terminals. Done. No cleanup.</span></pre>
+    </div>
+  </section>
+
+  <footer class="doc-footer">
+    <p>HumanBound Relay Proxy — Implementation Guide v1.0 — February 2026</p>
+    <p>Prepared for Lloyds Banking Group AI Red Team Engagement</p>
+  </footer>
+
+</div>
+</body>
+</html>

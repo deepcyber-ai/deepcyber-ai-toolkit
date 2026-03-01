@@ -32,6 +32,7 @@ Thumbs.db
 # Design docs (keep roadmap tracked)
 design/*
 !design/ROADMAP.md
+!design/humanbound-relay-proxy-guide.html
 
 # Docker
 *.tar

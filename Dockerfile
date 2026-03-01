@@ -36,7 +36,8 @@ RUN pip install --no-cache-dir \
     nemoguardrails==0.20.0 \
     deepeval==3.8.8 \
     guardrails-ai==0.9.1 \
-    textattack==0.3.10
+    textattack==0.3.10 \
+    flask==3.1.1
 
 RUN useradd -m -s /bin/bash deepcyber
 

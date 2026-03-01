@@ -172,6 +172,30 @@ This logs the command, timestamp, engagement ID, and exit code.
 
 ---
 
+## Relay Proxy (Tunnelled Access to Internal APIs)
+
+For engagements where the target API is only accessible from inside the client network (banking, government, air-gapped). The relay proxy runs on the tester's laptop and bridges any cloud-based tool to the internal API via a Cloudflare Tunnel — no inbound firewall changes required.
+
+```
+Cloud Tool ──HTTPS──▶ Cloudflare Tunnel ──▶ Relay Proxy (your laptop) ──▶ Internal API
+```
+
+### Quick Start
+
+```bash
+cp configs/relay.env.example relay.env
+# Edit relay.env with target API, shared secret, JWT token
+./deepcyber.sh --relay relay.env
+# In another terminal:
+cloudflared tunnel --url http://localhost:8443
+```
+
+Features: shared-secret auth, JWT injection, path filtering, rate limiting, tamper-evident audit logs.
+
+Full documentation: **[scripts/relay/README.md](scripts/relay/README.md)**
+
+---
+
 ## On-Site / Corporate Proxy Deployment
 
 For engagements behind a corporate proxy with a custom CA certificate:
@@ -236,24 +260,35 @@ docker run -it --rm \
 
 - `configs/promptfoo/promptfooconfig.yaml` — Promptfoo evaluation config (system prompt leakage, data exfiltration, indirect injection tests)
 - `configs/garak/deepcyber.yaml` — Garak probe config (jailbreak, prompt injection, data exfiltration, system prompt probes)
+- `configs/regulated.env.example` — Regulated environment mode template (telemetry suppression, audit logging, provider-agnostic API targeting)
+- `configs/relay.env.example` — Relay proxy configuration template
 
 ## Project Structure
 
 ```
 deepcyber-ai-toolkit/
 ├── Dockerfile
+├── deepcyber.sh                          # Host-side launcher script
 ├── start.sh                              # Container entrypoint
 ├── configs/
 │   ├── promptfoo/
 │   │   └── promptfooconfig.yaml
-│   └── garak/
-│       └── deepcyber.yaml
+│   ├── garak/
+│   │   └── deepcyber.yaml
+│   ├── regulated.env.example             # Regulated environment config
+│   └── relay.env.example                 # Relay proxy config
 ├── scripts/
 │   ├── deepcyber-scan.sh                 # Automated scan runner
-│   └── selftest.sh                       # Connectivity self-test
+│   ├── selftest.sh                       # Connectivity self-test
+│   ├── audit-wrap.sh                     # Audit wrapper for commands
+│   └── relay/
+│       ├── README.md                     # Relay proxy documentation
+│       ├── relay_proxy.py                # Reverse proxy with audit logging
+│       └── verify_audit.py              # Hash chain verification
 ├── results/                              # Scan output (gitignored)
 └── design/
-    └── DeepCyber AI Red Team Engagement Playbook.md
+    ├── DeepCyber AI Red Team Engagement Playbook.md
+    └── humanbound-relay-proxy-guide.html # Visual architecture guide
 ```
 
 ## Architecture

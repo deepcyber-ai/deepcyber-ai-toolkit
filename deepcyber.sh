@@ -17,6 +17,7 @@ usage() {
     echo "  -p, --proxy           Pass through HTTP_PROXY, HTTPS_PROXY, NO_PROXY from host"
     echo "  -c, --ca FILE         Mount a CA certificate for corporate proxy"
     echo "  -r, --regulated FILE  Launch in regulated environment mode using the specified .env file"
+    echo "  --relay FILE          Start the relay proxy using the specified .env file"
     echo "  -h, --help            Show this help message"
     echo ""
     echo "Examples:"
@@ -26,6 +27,8 @@ usage() {
     echo "  $(basename "$0") -p -c corp-ca.crt                  # Corporate proxy with custom CA"
     echo "  $(basename "$0") -r regulated.env                   # Regulated environment mode"
     echo "  $(basename "$0") -r regulated.env -c corp-ca.crt    # Regulated + custom CA"
+    echo "  $(basename "$0") --relay relay.env                  # Start relay proxy for tunnelled access"
+    echo "  $(basename "$0") --relay relay.env -c corp-ca.crt   # Relay proxy with custom CA"
 }
 
 WORKSPACE="$(pwd)"
@@ -33,6 +36,7 @@ JUPYTER=false
 PROXY=false
 CA_CERT=""
 REGULATED_ENV=""
+RELAY_ENV=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -50,6 +54,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -r|--regulated)
             REGULATED_ENV="$2"
+            shift 2
+            ;;
+        --relay)
+            RELAY_ENV="$2"
             shift 2
             ;;
         -h|--help)
@@ -116,6 +124,34 @@ if [ -n "$CA_CERT" ]; then
     fi
     CA_CERT="$(cd "$(dirname "$CA_CERT")" && pwd)/$(basename "$CA_CERT")"
     DOCKER_ARGS+=("--user" "root" "-v" "${CA_CERT}:/corp-ca/corp-ca.crt:ro")
+fi
+
+# --- Relay proxy mode ---
+if [ -n "$RELAY_ENV" ]; then
+    if [ ! -f "$RELAY_ENV" ]; then
+        echo "Error: Relay environment file not found: ${RELAY_ENV}"
+        exit 1
+    fi
+
+    RELAY_ENV="$(cd "$(dirname "$RELAY_ENV")" && pwd)/$(basename "$RELAY_ENV")"
+    DOCKER_ARGS+=("--env-file" "${RELAY_ENV}")
+
+    # Extract relay port (default 8443)
+    RELAY_PORT=$(grep -E '^RELAY_PORT=' "$RELAY_ENV" | cut -d= -f2- | tr -d '"' | tr -d "'")
+    RELAY_PORT="${RELAY_PORT:-8443}"
+    DOCKER_ARGS+=("-p" "${RELAY_PORT}:${RELAY_PORT}")
+
+    # Extract CA_CERT_PATH from relay env if set and not already specified
+    ENV_CA_CERT=$(grep -E '^CA_CERT_PATH=' "$RELAY_ENV" | cut -d= -f2- | tr -d '"' | tr -d "'")
+    if [ -n "$ENV_CA_CERT" ] && [ -z "$CA_CERT" ]; then
+        CA_CERT="$ENV_CA_CERT"
+    fi
+
+    echo "Starting DeepCyber relay proxy on port ${RELAY_PORT}..."
+    echo "Run 'cloudflared tunnel --url http://localhost:${RELAY_PORT}' to expose via Cloudflare Tunnel."
+    echo ""
+    docker run "${DOCKER_ARGS[@]}" "$IMAGE" python /home/deepcyber/scripts/relay/relay_proxy.py
+    exit 0
 fi
 
 # --- Launch ---
