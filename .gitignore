@@ -1,0 +1,36 @@
+# Results and output
+results/
+
+# Environment and secrets
+.env
+.env.*
+*.key
+*.pem
+*.crt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code
+.claude/
+
+# Design docs
+design/
+
+# Docker
+*.tar

@@ -1,0 +1,8 @@
+model_type: ${GARAK_MODEL_TYPE}
+model_name: ${GARAK_MODEL_NAME}
+
+probes:
+  - jailbreak
+  - prompt_injection
+  - data_exfiltration
+  - system_prompt
