@@ -6,16 +6,16 @@ A containerised toolkit for AI/LLM red team engagements. Packages industry-stand
 
 | Tool | Version | Purpose |
 |------|---------|---------|
+| [HumanBound](https://github.com/humanbound/humanbound-cli) | 0.5.0 | Contextual red teaming for GenAI and Agentic applications |
 | [Promptfoo](https://github.com/promptfoo/promptfoo) | 0.120.25 | LLM prompt evaluation and red teaming |
 | [Garak](https://github.com/NVIDIA/garak) | 0.14.0 | LLM vulnerability scanner |
 | [PyRIT](https://github.com/Azure/PyRIT) | 0.11.0 | Python Risk Identification Toolkit |
-| [Inspect AI](https://github.com/UKGovernmentBEIS/inspect_ai) | 0.3.184 | AI safety evaluation framework |
+| [Inspect AI](https://github.com/UKGovernmentBEIS/inspect_ai) | 0.3.184 | A framework for large language model evaluations created by the UK AI Security Institute |
 | [ModelScan](https://github.com/protectai/modelscan) | 0.8.8 | ML model security scanner |
 | [FAISS](https://github.com/facebookresearch/faiss) | 1.13.2 | Vector similarity search |
 | [ART](https://github.com/Trusted-AI/adversarial-robustness-toolbox) | 1.20.1 | Adversarial robustness testing |
 | [AIF360](https://github.com/Trusted-AI/AIF360) | 0.6.1 | AI fairness and bias detection |
 | [JupyterLab](https://github.com/jupyterlab/jupyterlab) | 4.5.5 | Interactive notebook environment |
-| [HumanBound CLI](https://github.com/humanbound/humanbound-cli) | 0.5.0 | Human-in-the-loop verification |
 
 ## Prerequisites
 
