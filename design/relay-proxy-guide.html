@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>HumanBound Relay Proxy — Implementation Guide</title>
+<title>DeepCyber Relay Proxy — Implementation Guide</title>
 <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -253,7 +253,7 @@
   }
 
   .network-boundary::before {
-    content: 'LLOYDS NETWORK BOUNDARY';
+    content: 'CLIENT NETWORK BOUNDARY';
     position: absolute;
     top: -10px;
     left: 20px;
@@ -503,23 +503,23 @@
   <!-- HEADER -->
   <header class="doc-header">
     <div class="classification">Engagement Confidential — Red Team Infrastructure</div>
-    <h1>HumanBound <span>Relay Proxy</span></h1>
-    <p class="subtitle">Local relay architecture enabling HumanBound cloud execution against a network-restricted internal API at Lloyds Banking Group.</p>
+    <h1>DeepCyber <span>Relay Proxy</span></h1>
+    <p class="subtitle">Local relay architecture enabling cloud-based red team tools to test network-restricted internal APIs.</p>
     <div class="meta-row">
-      <span>Version 1.0</span>
+      <span>Version 1.1</span>
       <span>|</span>
-      <span>February 2026</span>
+      <span>March 2026</span>
       <span>|</span>
-      <span>FCA-regulated environment</span>
+      <span>Regulated environments</span>
     </div>
   </header>
 
   <!-- PROBLEM STATEMENT -->
   <section>
     <h2>The Problem</h2>
-    <p>HumanBound operates as a cloud-hosted execution engine. It generates payloads, sends them to the target API, observes responses, and <strong>adapts in real-time</strong> — the intelligence is in the feedback loop. It cannot be reduced to a job queue.</p>
-    <p>The target API at Lloyds is <strong>not internet-facing</strong>. It sits behind private DNS, IP restriction, and proxy enforcement. HumanBound's cloud infrastructure cannot reach it.</p>
-    <p>Your laptop, when on the Lloyds network, <strong>can</strong> reach the API. The solution: make your laptop a transparent relay so HumanBound cloud believes it's talking directly to the API.</p>
+    <p>Cloud-based red team tools (HumanBound, Promptfoo, third-party scanners) generate payloads, send them to the target API, observe responses, and <strong>adapt in real-time</strong> — the intelligence is in the feedback loop. They cannot be reduced to a job queue.</p>
+    <p>The target API is <strong>not internet-facing</strong>. It sits behind private DNS, IP restriction, and proxy enforcement. Cloud tool infrastructure cannot reach it.</p>
+    <p>Your laptop, when on the client network, <strong>can</strong> reach the API. The solution: make your laptop a transparent relay so the cloud tool believes it's talking directly to the API.</p>
   </section>
 
   <!-- ARCHITECTURE -->
@@ -530,8 +530,8 @@
       <div class="arch-flow">
         <div class="arch-node node-cloud">
           <div class="label">Cloud</div>
-          <div class="name">HumanBound</div>
-          <div class="detail">Test engine</div>
+          <div class="name">Cloud Tool</div>
+          <div class="detail">Red team engine</div>
         </div>
 
         <div class="arch-arrow">
@@ -555,14 +555,14 @@
 
           <div class="arch-node node-api">
             <div class="label">Target</div>
-            <div class="name">Lloyds API</div>
-            <div class="detail">internal.api.lloyds</div>
+            <div class="name">Internal API</div>
+            <div class="detail">internal-api.client.com</div>
           </div>
         </div>
       </div>
     </div>
 
-    <p>The relay proxy runs on your laptop inside the Lloyds network. It receives requests from HumanBound via a secure tunnel, forwards them to the internal API, and returns responses. HumanBound never touches the internal network directly — all traffic transits through your controlled, auditable relay.</p>
+    <p>The relay proxy runs on your laptop inside the client network. It receives requests from the cloud tool via a secure tunnel, forwards them to the internal API, and returns responses. The cloud tool never touches the internal network directly — all traffic transits through your controlled, auditable relay.</p>
   </section>
 
   <!-- HOW IT WORKS -->
@@ -571,15 +571,15 @@
 
     <div class="sequence">
       <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 20px;">
-        <div class="seq-actor">HumanBound Cloud</div>
+        <div class="seq-actor">Cloud Tool</div>
         <div class="seq-actor">Your Laptop (Relay)</div>
-        <div class="seq-actor">Lloyds Internal API</div>
+        <div class="seq-actor">Internal API</div>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 12px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <span class="seq-num">1</span>
-          <span class="msg" style="color: var(--text-muted);">HumanBound sends test payload → tunnel → relay proxy on localhost:8443</span>
+          <span class="msg" style="color: var(--text-muted);">Cloud tool sends test payload → tunnel → relay proxy on localhost:8443</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <span class="seq-num">2</span>
@@ -599,11 +599,11 @@
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <span class="seq-num">6</span>
-          <span class="msg" style="color: var(--text-muted);">Relay logs the response, returns it through tunnel to HumanBound</span>
+          <span class="msg" style="color: var(--text-muted);">Relay logs the response, returns it through tunnel to cloud tool</span>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <span class="seq-num">7</span>
-          <span class="msg" style="color: var(--text-muted);">HumanBound analyses response, generates next adaptive payload → repeat</span>
+          <span class="msg" style="color: var(--text-muted);">Cloud tool analyses response, generates next adaptive payload → repeat</span>
         </div>
       </div>
     </div>
@@ -612,7 +612,7 @@
   <!-- TUNNEL OPTIONS -->
   <section>
     <h2>Tunnel Options</h2>
-    <p>You need a way for HumanBound cloud to reach your laptop's relay proxy. The tunnel must be <strong>outbound-initiated</strong> from your laptop (no inbound firewall changes). Here are the realistic options ranked by bank-friendliness:</p>
+    <p>You need a way for the cloud tool to reach your laptop's relay proxy. The tunnel must be <strong>outbound-initiated</strong> from your laptop (no inbound firewall changes). Here are the realistic options ranked by enterprise-friendliness:</p>
 
     <table class="risk-table">
       <thead>
@@ -621,7 +621,7 @@
           <th>How it works</th>
           <th>SOC Risk</th>
           <th>Setup</th>
-          <th>Bank-friendly</th>
+          <th>Enterprise-friendly</th>
         </tr>
       </thead>
       <tbody>
@@ -658,14 +658,14 @@
 
     <div class="callout callout-info">
       <div class="callout-title">Recommendation</div>
-      <p><strong>Cloudflare Tunnel</strong> is the strongest option for a bank environment. It's outbound-only HTTPS on port 443, passes through corporate proxies transparently, and leaves no listening ports on your machine. You control the tunnel from a Cloudflare dashboard and can kill it instantly. If they ask what it is, it's a "secure application access tunnel" — the same technology Cloudflare sells to banks for zero-trust access.</p>
+      <p><strong>Cloudflare Tunnel</strong> is the strongest option for regulated environments. It's outbound-only HTTPS on port 443, passes through corporate proxies transparently, and leaves no listening ports on your machine. You control the tunnel from a Cloudflare dashboard and can kill it instantly. It's a "secure application access tunnel" — the same technology Cloudflare sells to enterprises for zero-trust access.</p>
     </div>
   </section>
 
   <!-- IMPLEMENTATION -->
   <section>
     <h2>Implementation: The Relay Proxy</h2>
-    <p>This is the core component — a Python reverse proxy running on your laptop that receives HumanBound traffic, handles JWT auth, forwards to the internal API, and logs everything for FCA compliance.</p>
+    <p>This is the core component — a Python reverse proxy running on your laptop that receives cloud tool traffic, handles JWT auth, forwards to the internal API, and logs everything for regulatory compliance.</p>
 
     <div class="code-block">
       <div class="code-header">
@@ -674,11 +674,11 @@
       </div>
       <pre><span class="comment">#!/usr/bin/env python3</span>
 <span class="comment">"""
-HumanBound Relay Proxy
-Sits on your laptop inside the Lloyds network.
-Receives requests from HumanBound cloud via tunnel,
+DeepCyber Relay Proxy
+Sits on your laptop inside the client network.
+Receives requests from cloud tools via tunnel,
 forwards to internal API, returns responses.
-All requests/responses logged for FCA audit trail.
+All requests/responses logged for audit trail.
 """</span>
 
 <span class="keyword">import</span> json, time, uuid, hashlib, logging, os, sys
@@ -694,7 +694,7 @@ All requests/responses logged for FCA audit trail.
 
 <span class="comment"># ── Configuration ──────────────────────────────────────</span>
 
-<span class="highlight">TARGET_API_BASE</span>    = os.getenv(<span class="string">"TARGET_API"</span>, <span class="string">"https://internal-api.lloyds.com"</span>)
+<span class="highlight">TARGET_API_BASE</span>    = os.getenv(<span class="string">"TARGET_API"</span>, <span class="string">"https://internal-api.client.com"</span>)
 <span class="highlight">LISTEN_PORT</span>        = int(os.getenv(<span class="string">"RELAY_PORT"</span>, <span class="string">"8443"</span>))
 <span class="highlight">SHARED_SECRET</span>      = os.getenv(<span class="string">"RELAY_SECRET"</span>, <span class="string">"CHANGE_ME_TO_RANDOM_SECRET"</span>)
 <span class="highlight">JWT_TOKEN</span>          = os.getenv(<span class="string">"JWT_TOKEN"</span>, <span class="string">""</span>)
@@ -754,7 +754,7 @@ request_times = []
 <span class="comment"># ── Auth Verification ──────────────────────────────────</span>
 
 <span class="keyword">def</span> <span class="func">verify_caller</span>() -> bool:
-    <span class="string">"""Verify the request is from HumanBound via shared secret."""</span>
+    <span class="string">"""Verify the request carries the correct shared secret."""</span>
     token = request.headers.get(<span class="string">"X-Relay-Secret"</span>, <span class="string">""</span>)
     <span class="keyword">return</span> token == SHARED_SECRET
 
@@ -849,7 +849,7 @@ request_times = []
             <span class="string">"utf-8"</span>, errors=<span class="string">"replace"</span>)
     })
 
-    <span class="comment"># ── Return to HumanBound ──</span>
+    <span class="comment"># ── Return to caller ──</span>
     excluded_headers = {<span class="string">"transfer-encoding"</span>, <span class="string">"content-encoding"</span>,
                         <span class="string">"content-length"</span>, <span class="string">"connection"</span>}
     response_headers = {k: v <span class="keyword">for</span> k, v <span class="keyword">in</span> resp.headers.items()
@@ -892,7 +892,7 @@ request_times = []
 
 <span class="keyword">if</span> __name__ == <span class="string">"__main__"</span>:
     log.info(f<span class="string">"╔══════════════════════════════════════════╗"</span>)
-    log.info(f<span class="string">"║  HumanBound Relay Proxy                  ║"</span>)
+    log.info(f<span class="string">"║  DeepCyber Relay Proxy                   ║"</span>)
     log.info(f<span class="string">"║  Target: {TARGET_API_BASE:&lt;30} ║"</span>)
     log.info(f<span class="string">"║  Port:   {LISTEN_PORT:&lt;30} ║"</span>)
     log.info(f<span class="string">"║  Log:    {str(audit_log_path):&lt;30} ║"</span>)
@@ -929,7 +929,7 @@ request_times = []
         <span class="lang">bash</span>
       </div>
       <pre><span class="comment"># Set your target API and a strong shared secret</span>
-export TARGET_API=<span class="string">"https://internal-api.lloyds.com/v1"</span>
+export TARGET_API=<span class="string">"https://internal-api.client.com/v1"</span>
 export RELAY_SECRET=<span class="string">"$(openssl rand -hex 32)"</span>
 export JWT_TOKEN=<span class="string">"your-jwt-token-here"</span>
 export RELAY_PORT=<span class="string">"8443"</span>
@@ -955,11 +955,11 @@ cloudflared tunnel --url http://localhost:8443
 
 <span class="comment"># Output will show something like:</span>
 <span class="comment"># https://random-name-here.trycloudflare.com</span>
-<span class="comment"># ↑ Give THIS URL to HumanBound as the target API endpoint</span></pre>
+<span class="comment"># ↑ Use THIS URL as the target API endpoint in your cloud tool</span></pre>
     </div>
 
-    <h3>Step 4 — Point HumanBound at the tunnel URL</h3>
-    <p>In your HumanBound configuration, set the target API URL to the Cloudflare tunnel URL. HumanBound will send requests to that URL, which routes through the tunnel to your laptop's relay proxy, which forwards to the real internal API.</p>
+    <h3>Step 4 — Point your cloud tool at the tunnel URL</h3>
+    <p>In your cloud tool's configuration, set the target API URL to the Cloudflare tunnel URL. The tool will send requests to that URL, which routes through the tunnel to your laptop's relay proxy, which forwards to the real internal API.</p>
 
     <div class="callout callout-warn">
       <div class="callout-title">Important: JWT management</div>
@@ -967,14 +967,14 @@ cloudflared tunnel --url http://localhost:8443
     </div>
   </section>
 
-  <!-- HUMANBOUND CONFIG -->
+  <!-- CLOUD TOOL CONFIG -->
   <section>
-    <h2>HumanBound Configuration</h2>
-    <p>When configuring HumanBound to test the API, you need to tell it to include the relay authentication header on every request:</p>
+    <h2>Cloud Tool Configuration</h2>
+    <p>Configure your cloud tool to include the relay authentication header on every request. The exact method depends on the tool:</p>
 
     <div class="code-block">
       <div class="code-header">
-        <span class="filename">HumanBound config</span>
+        <span class="filename">Cloud tool config</span>
         <span class="lang">yaml / json</span>
       </div>
       <pre><span class="comment"># Target URL is your Cloudflare tunnel, NOT the real API</span>
@@ -985,18 +985,18 @@ custom_headers:
   X-Relay-Secret: <span class="string">"your-64-char-hex-secret"</span>
 
 <span class="comment"># Do NOT set Authorization header — the relay injects it</span>
-<span class="comment"># HumanBound sends payloads → tunnel → relay → real API</span></pre>
+<span class="comment"># Cloud tool sends payloads → tunnel → relay → real API</span></pre>
     </div>
 
     <div class="callout callout-success">
-      <div class="callout-title">What HumanBound sees</div>
-      <p>From HumanBound's perspective, it's just testing an API at a normal HTTPS URL. It has no idea a relay exists. It sends requests, gets responses, and runs its adaptive test logic as normal. The relay is transparent.</p>
+      <div class="callout-title">What the cloud tool sees</div>
+      <p>From the cloud tool's perspective, it's just testing an API at a normal HTTPS URL. It has no idea a relay exists. It sends requests, gets responses, and runs its test logic as normal. The relay is transparent.</p>
     </div>
   </section>
 
-  <!-- AUDIT & FCA -->
+  <!-- AUDIT & COMPLIANCE -->
   <section>
-    <h2>Audit Trail & FCA Compliance</h2>
+    <h2>Audit Trail & Compliance</h2>
     <p>The relay produces a <strong>tamper-evident JSONL audit log</strong> with chained SHA-256 hashes. Every entry contains a hash of itself plus the previous entry's hash, forming a verifiable chain. If any line is modified or deleted, the chain breaks.</p>
 
     <div class="code-block">
@@ -1010,7 +1010,7 @@ custom_headers:
   "event": "REQUEST",
   "id": "a1b2c3d4",
   "method": "POST",
-  "target": "https://internal-api.lloyds.com/v1/chat",
+  "target": "https://internal-api.client.com/v1/chat",
   "body_size": 245,
   "body_preview": "{\"messages\":[{\"role\":\"user\",\"content\":\"ignore...",
   "prev_hash": "GENESIS",
@@ -1058,7 +1058,7 @@ print(f<span class="string">"✓ All {i} entries verified. Chain intact."</span>
     <ul class="step-list">
       <li>
         <span class="step-num">1</span>
-        <div><strong>Localhost binding only.</strong> The relay binds to 127.0.0.1 — it never listens on the network interface. Only the tunnel can reach it. Nobody on the Lloyds network can hit your relay directly.</div>
+        <div><strong>Localhost binding only.</strong> The relay binds to 127.0.0.1 — it never listens on the network interface. Only the tunnel can reach it. Nobody on the client network can hit your relay directly.</div>
       </li>
       <li>
         <span class="step-num">2</span>
@@ -1066,7 +1066,7 @@ print(f<span class="string">"✓ All {i} entries verified. Chain intact."</span>
       </li>
       <li>
         <span class="step-num">3</span>
-        <div><strong>Path allowlisting.</strong> Set ALLOWED_PATHS to restrict which API endpoints HumanBound can hit. If the target API has admin endpoints you shouldn't touch, block them here.</div>
+        <div><strong>Path allowlisting.</strong> Set ALLOWED_PATHS to restrict which API endpoints the cloud tool can hit. If the target API has admin endpoints you shouldn't touch, block them here.</div>
       </li>
       <li>
         <span class="step-num">4</span>
@@ -1074,7 +1074,7 @@ print(f<span class="string">"✓ All {i} entries verified. Chain intact."</span>
       </li>
       <li>
         <span class="step-num">5</span>
-        <div><strong>Tamper-evident logging.</strong> Chained hashes mean you can prove no log entries were added, removed, or modified after the fact. Critical for FCA evidence.</div>
+        <div><strong>Tamper-evident logging.</strong> Chained hashes mean you can prove no log entries were added, removed, or modified after the fact. Critical for regulatory evidence.</div>
       </li>
       <li>
         <span class="step-num">6</span>
@@ -1083,20 +1083,20 @@ print(f<span class="string">"✓ All {i} entries verified. Chain intact."</span>
     </ul>
   </section>
 
-  <!-- WHAT TO TELL LLOYDS -->
+  <!-- STAKEHOLDER COMMUNICATION -->
   <section>
-    <h2>What to Tell Lloyds</h2>
+    <h2>Stakeholder Communication</h2>
 
     <div class="callout callout-info">
-      <div class="callout-title">Recommended framing</div>
-      <p><em>"Our testing methodology uses an AI-powered red team engine for adaptive payload generation. To maintain the integrity of automated testing while operating within your network boundary, we deploy a lightweight, auditable relay process on the provisioned test laptop. All API calls originate from within your network. The relay maintains a tamper-evident audit log of every request and response for post-engagement review. No inbound connections are opened. The relay can be terminated instantly and leaves no persistent access."</em></p>
+      <div class="callout-title">Recommended framing for client approval</div>
+      <p><em>"Our testing methodology uses cloud-based red team tools for adaptive payload generation. To maintain the integrity of automated testing while operating within your network boundary, we deploy a lightweight, auditable relay process on the provisioned test laptop. All API calls originate from within your network. The relay maintains a tamper-evident audit log of every request and response for post-engagement review. No inbound connections are opened. The relay can be terminated instantly and leaves no persistent access."</em></p>
     </div>
 
-    <p>Key points to emphasise:</p>
+    <p>Key points to cover:</p>
     <ul class="step-list">
       <li>
         <span class="step-num">→</span>
-        <div>All API requests originate from <strong>their device, on their network</strong></div>
+        <div>All API requests originate from <strong>the provisioned device, on the client network</strong></div>
       </li>
       <li>
         <span class="step-num">→</span>
@@ -1148,19 +1148,19 @@ print(f<span class="string">"✓ All {i} entries verified. Chain intact."</span>
         <tr>
           <td>Relay crashes / laptop sleeps</td>
           <td><span class="badge badge-low">Low</span></td>
-          <td>HumanBound gets connection errors, pauses. Restart relay, resume. No data loss — log is append-only.</td>
+          <td>Cloud tool gets connection errors, pauses. Restart relay, resume. No data loss — log is append-only.</td>
         </tr>
         <tr>
-          <td>Bank policy prohibits tunnels</td>
+          <td>Client policy prohibits tunnels</td>
           <td><span class="badge badge-high">High</span></td>
-          <td>This is the real blocker. If they say no tunnels, you fall back to Option 3 (manual execution). Confirm policy before building.</td>
+          <td>This is the real blocker. If the client prohibits tunnels, you fall back to running tools locally. Confirm policy before deploying.</td>
         </tr>
       </tbody>
     </table>
 
     <div class="callout callout-danger">
       <div class="callout-title">Critical: Get approval first</div>
-      <p>Do <strong>not</strong> deploy this without written approval from the Lloyds engagement lead. Even though it's technically low-risk, deploying an unapproved tunnel in a bank will end the engagement. Frame it properly, get it signed off, then deploy.</p>
+      <p>Do <strong>not</strong> deploy this without written approval from the client's engagement lead. Even though it's technically low-risk, deploying an unapproved tunnel in a regulated environment will end the engagement. Frame it properly, get it signed off, then deploy.</p>
     </div>
   </section>
 
@@ -1196,8 +1196,8 @@ python verify_audit.py
   </section>
 
   <footer class="doc-footer">
-    <p>HumanBound Relay Proxy — Implementation Guide v1.0 — February 2026</p>
-    <p>Prepared for Lloyds Banking Group AI Red Team Engagement</p>
+    <p>DeepCyber Relay Proxy — Implementation Guide v1.1 — March 2026</p>
+    <p>Part of the DeepCyber AI Red Team Toolkit</p>
   </footer>
 
 </div>

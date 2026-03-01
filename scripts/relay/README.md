@@ -212,6 +212,64 @@ export JWT_TOKEN=your-token
 python scripts/relay/relay_proxy.py
 ```
 
+## Testing
+
+### Automated Tests
+
+Run the integration test suite (no Docker required):
+
+```bash
+bash scripts/relay/test_relay.sh
+```
+
+This starts a mock echo server and the relay proxy, runs 17 curl-based tests covering authentication, path filtering, header handling, request forwarding, rate limiting, JWT hot-swap, and audit log integrity, then cleans up. Exit code is 0 on success, 1 on any failure.
+
+Override ports if the defaults (19876/19877) conflict:
+
+```bash
+MOCK_PORT=29876 RELAY_PORT=29877 bash scripts/relay/test_relay.sh
+```
+
+### Manual / Interactive Testing
+
+Start a mock target and the relay together for hands-on exploration:
+
+```bash
+bash scripts/relay/dev_relay.sh
+```
+
+This starts both servers in the foreground with sensible defaults (secret: `mysecret`, port: 8443). Then curl from another terminal:
+
+```bash
+# Proxied request — inspect what headers and body reach the target
+curl -s -H "X-Relay-Secret: mysecret" \
+  http://localhost:8443/v1/chat/completions | python3 -m json.tool
+
+# POST with body
+curl -s -X POST \
+  -H "X-Relay-Secret: mysecret" \
+  -H "Content-Type: application/json" \
+  -d '{"model":"gpt-4","messages":[{"role":"user","content":"hello"}]}' \
+  http://localhost:8443/v1/chat/completions | python3 -m json.tool
+
+# Verify auth is enforced
+curl -v http://localhost:8443/v1/models
+
+# Health check
+curl -s http://localhost:8443/__relay/health | python3 -m json.tool
+```
+
+The mock echo server returns the exact method, path, headers, and body it received, so you can verify JWT injection, header stripping, and body forwarding at a glance.
+
+Override any setting via environment variables:
+
+```bash
+RELAY_SECRET=abc JWT_TOKEN=my-token ALLOWED_PATHS=/v1/chat RELAY_PORT=9000 \
+  bash scripts/relay/dev_relay.sh
+```
+
+Ctrl-C stops both servers.
+
 ## Architecture Guide
 
-For a detailed visual guide with architecture diagrams and approach comparison, see `design/humanbound-relay-proxy-guide.html`.
+For a detailed visual guide with architecture diagrams and approach comparison, see `design/relay-proxy-guide.html`.

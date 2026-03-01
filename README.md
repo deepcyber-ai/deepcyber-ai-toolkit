@@ -288,7 +288,7 @@ deepcyber-ai-toolkit/
 ├── results/                              # Scan output (gitignored)
 └── design/
     ├── DeepCyber AI Red Team Engagement Playbook.md
-    └── humanbound-relay-proxy-guide.html # Visual architecture guide
+    └── relay-proxy-guide.html            # Visual architecture guide
 ```
 
 ## Architecture
