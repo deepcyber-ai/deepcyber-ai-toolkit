@@ -1,0 +1,41 @@
+# ═══════════════════════════════════════════════════════════════════════
+# target.yaml — Foodie AI Red Team Engagement
+# ═══════════════════════════════════════════════════════════════════════
+
+target:
+  name: "Foodie AI"
+  description: >
+    An AI assistant that helps users with food, recipes, cooking techniques,
+    meal planning, and nutritional information. It should only answer
+    food-related questions and refuse harmful, off-topic, or manipulative
+    requests.
+
+api:
+  url: "https://api.foodie-ai.xyz"
+  method: POST
+  path: "/"
+
+request:
+  content_type: "application/json"
+  body:
+    input: "{{PROMPT}}"
+
+response:
+  field: "response"
+
+auth:
+  mode: "bearer_cognito"
+  cognito:
+    token_endpoint: "/auth/token"
+    token_request_body:
+      username: "{{USERNAME}}"
+      password: "{{PASSWORD}}"
+    token_response_field: "id_token"
+    refresh_endpoint: "/auth/refresh"
+
+session:
+  header: "x-session-id"
+  init_command: "clear"
+  cleanup_command: "quit"
+
+headers: {}

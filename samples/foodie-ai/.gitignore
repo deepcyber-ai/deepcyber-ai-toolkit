@@ -1,0 +1,11 @@
+.env
+__pycache__/
+*.pyc
+bot.json
+target_garak.json
+node_modules/
+.promptfoo/
+output/
+results/
+*.log
+giskard_report.html

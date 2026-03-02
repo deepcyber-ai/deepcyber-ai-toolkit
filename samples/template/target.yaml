@@ -1,0 +1,107 @@
+# ═══════════════════════════════════════════════════════════════════════
+# target.yaml — Red Team Engagement Configuration
+# ═══════════════════════════════════════════════════════════════════════
+#
+# This is the ONLY file you need to edit to point all tools at a new
+# target. Copy this template directory, rename it, and fill in the
+# values below.
+#
+# Credentials go in .env (not here). See .env.example.
+# ═══════════════════════════════════════════════════════════════════════
+
+# ─── Target Identity ─────────────────────────────────────────────────
+# Used in reports, HumanBound project names, and Giskard model wrappers.
+target:
+  name: "CHANGEME AI"
+  description: >
+    A conversational AI assistant.
+    Describe its purpose, allowed topics, and expected boundaries here.
+    Be specific — this drives adversarial probe generation quality.
+
+# ─── API Endpoint ────────────────────────────────────────────────────
+api:
+  url: "https://api.example.com"    # Base URL of the target API
+  method: POST                      # HTTP method (almost always POST)
+  path: "/"                         # Path appended to url
+
+# ─── Request Format ──────────────────────────────────────────────────
+# How to send a prompt to the API.
+# Use {{PROMPT}} as the placeholder — each tool replaces it with its
+# own attack text.
+request:
+  content_type: "application/json"
+  body:
+    input: "{{PROMPT}}"
+
+  # ── Common alternatives ──
+  #
+  # OpenAI-compatible:
+  #   body:
+  #     model: "gpt-4"
+  #     messages:
+  #       - role: "user"
+  #         content: "{{PROMPT}}"
+  #
+  # Simple content field:
+  #   body:
+  #     content: "{{PROMPT}}"
+  #
+  # LangGraph:
+  #   body:
+  #     input:
+  #       messages:
+  #         - role: "user"
+  #           content: "{{PROMPT}}"
+
+# ─── Response Format ─────────────────────────────────────────────────
+# Dot-notation path to the AI's text reply in the JSON response.
+response:
+  field: "response"
+
+  # ── Common alternatives ──
+  # OpenAI-compatible:  "choices.0.message.content"
+  # Simple:             "text"
+  # LangGraph:          "output"
+
+# ─── Authentication ──────────────────────────────────────────────────
+# Supported modes: bearer_cognito, api_key, basic, none
+auth:
+  mode: "bearer_cognito"
+
+  # --- bearer_cognito: username/password exchange for JWT ---
+  # Credentials come from TARGET_USERNAME / TARGET_PASSWORD in .env
+  cognito:
+    token_endpoint: "/auth/token"
+    token_request_body:
+      username: "{{USERNAME}}"
+      password: "{{PASSWORD}}"
+    token_response_field: "id_token"
+    refresh_endpoint: "/auth/refresh"
+
+  # --- api_key: static key in a header ---
+  # Uncomment and set mode: "api_key" to use.
+  # api_key:
+  #   header: "Authorization"       # or "x-api-key", "api-key"
+  #   prefix: "Bearer "             # "" for raw key
+  #   env_var: "TARGET_API_KEY"     # reads from .env
+
+  # --- basic: HTTP Basic auth ---
+  # Uncomment and set mode: "basic" to use.
+  # basic:
+  #   env_user: "TARGET_USERNAME"
+  #   env_pass: "TARGET_PASSWORD"
+
+  # --- none: no authentication ---
+  # Set mode: "none" if the API is open.
+
+# ─── Session / Conversation Management ───────────────────────────────
+# Set header to "" if the target has no session concept.
+session:
+  header: "x-session-id"           # Header name for session tracking
+  init_command: "clear"             # Sent to reset session before tests
+  cleanup_command: "quit"           # Sent to delete session after tests
+
+# ─── Additional Headers ─────────────────────────────────────────────
+# Extra headers included on every request (beyond Content-Type and Auth).
+headers: {}
+  # x-custom-header: "value"
