@@ -20,12 +20,11 @@ import sys
 import pandas as pd
 import requests
 
-# Add engagement root to path for shared modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from shared.config import (
     load_target_config,
     get_api_url,
     get_request_body,
+    get_engagement_dir,
     extract_response,
 )
 from shared.auth import get_auth_headers
@@ -71,10 +70,11 @@ def main():
         nargs="+",
         help="Run only these detectors (e.g. prompt_injection information_disclosure)",
     )
+    default_output = os.path.join(get_engagement_dir(), "giskard_report.html")
     parser.add_argument(
         "--output",
-        default="giskard_report.html",
-        help="Output HTML report path (default: giskard_report.html)",
+        default=default_output,
+        help=f"Output HTML report path (default: {default_output})",
     )
     args = parser.parse_args()
 

@@ -6,27 +6,36 @@ set -euo pipefail
 # Reads target.yaml to generate a Garak REST config (target_garak.json),
 # authenticates, and launches the scan.
 #
+# Expects ENGAGEMENT_DIR and DEEPCYBER_LIB to be set (by the dcr CLI).
+# Falls back to REPO_ROOT for backward compatibility.
+#
 # Usage:
 #   bash run.sh                          # default probes
 #   bash run.sh -p dan                   # DAN jailbreak probes
 #   bash run.sh -p encoding -d always.Pass
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 
-# Load .env
-if [ ! -f "$REPO_ROOT/.env" ]; then
-  echo "Error: .env not found. Copy .env.example to .env and fill in credentials."
-  exit 1
+# Resolve directories (dcr sets these; fall back to legacy layout)
+ENGAGEMENT_DIR="${ENGAGEMENT_DIR:-$(dirname "$SCRIPT_DIR")}"
+DEEPCYBER_LIB="${DEEPCYBER_LIB:-$(dirname "$SCRIPT_DIR")}"
+export ENGAGEMENT_DIR DEEPCYBER_LIB
+
+# Load .env from engagement dir
+if [ -f "$ENGAGEMENT_DIR/.env" ]; then
+  set -a; source "$ENGAGEMENT_DIR/.env"; set +a
 fi
-set -a; source "$REPO_ROOT/.env"; set +a
-export REPO_ROOT
+
+# Output directory inside engagement
+GARAK_DIR="$ENGAGEMENT_DIR/garak"
+mkdir -p "$GARAK_DIR"
 
 # Generate target_garak.json from target.yaml and get a token
 echo "==> Generating Garak config from target.yaml..."
 REST_API_KEY=$(python3 -c '
 import sys, os, json
-sys.path.insert(0, os.environ["REPO_ROOT"])
+sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
+os.environ.setdefault("ENGAGEMENT_DIR", os.environ.get("ENGAGEMENT_DIR", ""))
 from shared.config import load_target_config, get_api_url, get_response_field
 from shared.auth import get_token
 
@@ -73,7 +82,8 @@ garak_config = {
     }
 }
 
-out_path = os.path.join(os.environ["REPO_ROOT"], "garak", "target_garak.json")
+out_path = os.path.join(os.environ["ENGAGEMENT_DIR"], "garak", "target_garak.json")
+os.makedirs(os.path.dirname(out_path), exist_ok=True)
 with open(out_path, "w") as f:
     json.dump(garak_config, f, indent=2)
 
@@ -86,7 +96,7 @@ echo "==> Running Garak scan..."
 
 python3 -m garak \
   -m rest \
-  -G "$SCRIPT_DIR/target_garak.json" \
+  -G "$GARAK_DIR/target_garak.json" \
   "$@"
 
 echo ""

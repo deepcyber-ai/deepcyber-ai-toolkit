@@ -2,7 +2,7 @@
 
 Step-by-step cheatsheet for running an OWASP-aligned red team assessment against any conversational AI API.
 
-All tools are pre-installed in the DeepCyber container.
+All tools are pre-installed in the DeepCyber container. Use `dcr` (DeepCyber Redteam) as the single CLI entry point.
 
 ---
 
@@ -55,7 +55,7 @@ OPENAI_API_KEY=sk-...
 ### Step 4 — Verify auth
 
 ```bash
-python shared/auth.py
+dcr auth
 ```
 
 Expected output:
@@ -77,7 +77,6 @@ Before attacking, understand the target. Send a few manual requests:
 
 ```bash
 python3 -c "
-import sys; sys.path.insert(0, '.')
 from shared.config import load_target_config, get_api_url, get_request_body, extract_response
 from shared.auth import get_auth_headers
 import requests
@@ -114,13 +113,11 @@ Run tools from fastest/broadest to slowest/deepest.
 The broadest automated scan. Tests all OWASP LLM Top 10 categories in one shot.
 
 ```bash
-cd humanbound
-python redteam.py setup            # generates bot.json
-python redteam.py init             # registers with HumanBound cloud
-python redteam.py test --single    # ~600 test cases, ~20 min
-python redteam.py logs --failed    # review failures
-python redteam.py posture          # security score
-cd ..
+dcr humanbound setup            # generates bot.json
+dcr humanbound init             # registers with HumanBound cloud
+dcr humanbound test --single    # ~600 test cases, ~20 min
+dcr humanbound logs --failed    # review failures
+dcr humanbound posture          # security score
 ```
 
 ### 3b. Promptfoo — Plugin-Based Red Team (~15 min)
@@ -128,10 +125,9 @@ cd ..
 17 attack plugins with 6 encoding/escalation strategies.
 
 ```bash
-cd promptfoo
-bash setup.sh                      # generates config + runs scan
-npx promptfoo@latest redteam report   # view report in browser
-cd ..
+dcr promptfoo                      # generates config + runs scan
+# Then view report:
+cd promptfoo && npx promptfoo@latest redteam report && cd ..
 ```
 
 ### 3c. Garak — Probe-Based Scanning (~10 min)
@@ -139,11 +135,9 @@ cd ..
 NVIDIA's LLM vulnerability scanner. Good for encoding attacks and known jailbreaks.
 
 ```bash
-cd garak
-bash run.sh                        # default probes
-bash run.sh -p dan                 # DAN jailbreak probes
-bash run.sh -p encoding            # encoding-based attacks
-cd ..
+dcr garak                        # default probes
+dcr garak -p dan                 # DAN jailbreak probes
+dcr garak -p encoding            # encoding-based attacks
 ```
 
 ### 3d. PyRIT — Single-Turn Adversarial (~5 min)
@@ -151,9 +145,7 @@ cd ..
 Microsoft's red teaming framework. Good for custom prompt lists.
 
 ```bash
-cd pyrit
-python single_turn.py
-cd ..
+dcr pyrit-single
 ```
 
 ### 3e. Giskard — Vulnerability Scan + HTML Report (~10 min)
@@ -161,10 +153,8 @@ cd ..
 Produces a nice HTML report covering injection, disclosure, harmful content.
 
 ```bash
-cd giskard
-python scan.py                     # all detectors
-python scan.py --only prompt_injection information_disclosure   # or specific
-cd ..
+dcr giskard                                          # all detectors
+dcr giskard --only prompt_injection information_disclosure   # or specific
 ```
 
 ### 3f. HumanBound — Multi-Turn OWASP (~30 min)
@@ -172,11 +162,9 @@ cd ..
 Deeper conversational attacks. Tests gradual escalation, context manipulation.
 
 ```bash
-cd humanbound
-python redteam.py test             # multi-turn (default), ~30 min
-python redteam.py test --workflow  # OWASP workflow attacks
-python redteam.py logs --failed    # review all failures
-cd ..
+dcr humanbound test             # multi-turn (default), ~30 min
+dcr humanbound test --workflow  # OWASP workflow attacks
+dcr humanbound logs --failed    # review all failures
 ```
 
 ### 3g. PyRIT — Multi-Turn with Attacker LLM (~10 min)
@@ -184,10 +172,8 @@ cd ..
 Requires `OPENAI_API_KEY`. An LLM attacks your LLM.
 
 ```bash
-cd pyrit
-# Edit OBJECTIVE in multi_turn.py first (tailor to this target)
-python multi_turn.py
-cd ..
+# Edit OBJECTIVE in pyrit/multi_turn.py first (tailor to this target)
+dcr pyrit-multi
 ```
 
 ---
@@ -198,17 +184,15 @@ cd ..
 
 ```bash
 # HumanBound
-cd humanbound
-python redteam.py logs --failed
-python redteam.py posture
-python redteam.py guardrails --format json -o ../results/guardrails.json
-cd ..
+dcr humanbound logs --failed
+dcr humanbound posture
+dcr humanbound guardrails --format json -o results/guardrails.json
 
 # Promptfoo
 cd promptfoo && npx promptfoo@latest redteam report && cd ..
 
 # Giskard
-open giskard/giskard_report.html
+open giskard_report.html
 ```
 
 ### What to look for
@@ -232,10 +216,8 @@ open giskard/giskard_report.html
 ## Phase 5: Report & Harden
 
 ```bash
-cd humanbound
-python redteam.py guardrails --vendor openai --format json -o ../results/guardrails_openai.json
-python redteam.py guardrails --vendor humanbound --format yaml -o ../results/guardrails_hb.yaml
-cd ..
+dcr humanbound guardrails --vendor openai --format json -o results/guardrails_openai.json
+dcr humanbound guardrails --vendor humanbound --format yaml -o results/guardrails_hb.yaml
 ```
 
 Deliverables:
@@ -252,19 +234,19 @@ Deliverables:
 ### Full automated scan (all tools, ~2 hours)
 
 ```bash
-cd deepcyber && bash scan.sh
+dcr scan
 ```
 
 ### Just HumanBound (fastest value, ~1 hour)
 
 ```bash
-cd humanbound && python redteam.py full
+dcr humanbound full
 ```
 
 ### Refresh auth token (tokens expire after ~1 hour)
 
 ```bash
-cd humanbound && python redteam.py setup
+dcr humanbound setup
 ```
 
 ### Engagement checklist
@@ -272,7 +254,7 @@ cd humanbound && python redteam.py setup
 ```
 [ ] target.yaml configured
 [ ] .env credentials set
-[ ] python shared/auth.py passes
+[ ] dcr auth passes
 [ ] Manual recon (3-5 test prompts)
 [ ] HumanBound single-turn scan
 [ ] Promptfoo red team scan

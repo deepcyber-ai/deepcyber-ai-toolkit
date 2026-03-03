@@ -25,14 +25,20 @@ import os
 import subprocess
 import sys
 
-# Add engagement root to path for shared modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from shared.config import load_target_config, get_api_url, get_request_body
+from shared.config import load_target_config, get_api_url, get_request_body, get_engagement_dir
 from shared.auth import get_auth_headers
 
-# ── Constants ───────────────────────────────────────────────────────────
 
-BOT_CONFIG_FILE = os.path.join(os.path.dirname(__file__), "bot.json")
+# ── Helpers ──────────────────────────────────────────────────────────────
+
+def _bot_config_path():
+    """Return the path to bot.json inside the engagement directory."""
+    path = os.path.join(get_engagement_dir(), "humanbound", "bot.json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
+
+
+# ── Constants ───────────────────────────────────────────────────────────
 
 TEST_CATEGORIES = {
     "single": "humanbound/adversarial/owasp_single_turn",
@@ -46,8 +52,6 @@ TEST_CATEGORIES = {
 TEST_LEVELS = ("unit", "system", "acceptance")
 
 
-# ── Helpers ─────────────────────────────────────────────────────────────
-
 def run(cmd, check=True):
     """Run a shell command, streaming output to the terminal."""
     print(f"\n>>> {cmd}\n")
@@ -60,7 +64,7 @@ def run(cmd, check=True):
 
 def ensure_bot_json():
     """Make sure bot.json exists, generating it if needed."""
-    if not os.path.exists(BOT_CONFIG_FILE):
+    if not os.path.exists(_bot_config_path()):
         print("bot.json not found — generating it now.\n")
         cmd_setup(None)
 
@@ -119,12 +123,13 @@ def cmd_setup(_args):
         },
     }
 
-    with open(BOT_CONFIG_FILE, "w") as f:
+    bot_path = _bot_config_path()
+    with open(bot_path, "w") as f:
         json.dump(bot_config, f, indent=2)
 
     target_name = config["target"]["name"]
     auth_mode = config["auth"]["mode"]
-    print(f"Generated {BOT_CONFIG_FILE}")
+    print(f"Generated {bot_path}")
     print(f"  Target:  {target_name}")
     print(f"  API URL: {api_url}")
     print(f"  Auth:    {auth_mode}")
@@ -137,13 +142,14 @@ def cmd_init(_args):
     ensure_bot_json()
     config = load_target_config()
     name = config["target"]["name"]
-    run(f'hb init --name "{name}" --endpoint {BOT_CONFIG_FILE} --yes')
+    run(f'hb init --name "{name}" --endpoint {_bot_config_path()} --yes')
 
 
 def cmd_test(args):
     """Run adversarial tests against the API."""
     ensure_logged_in()
     ensure_bot_json()
+    bot_path = _bot_config_path()
 
     # Determine test category
     if getattr(args, "single", False):
@@ -169,7 +175,7 @@ def cmd_test(args):
     # Build command
     cmd = (
         f"hb test"
-        f" -e {BOT_CONFIG_FILE}"
+        f" -e {bot_path}"
         f" -t {category}"
         f" -l {level}"
         f" --wait"
@@ -237,13 +243,14 @@ def cmd_full(_args):
     ensure_logged_in()
 
     # Step 3: Init project
+    bot_path = _bot_config_path()
     print("\n--- Step 3/6: Scanning bot and creating project ---")
-    run(f'hb init --name "{target_name}" --endpoint {BOT_CONFIG_FILE} --yes')
+    run(f'hb init --name "{target_name}" --endpoint {bot_path} --yes')
 
     # Step 4: Run single-turn attacks
     print("\n--- Step 4/6: Running single-turn OWASP attacks ---")
     run(
-        f"hb test -e {BOT_CONFIG_FILE}"
+        f"hb test -e {bot_path}"
         f" -t {TEST_CATEGORIES['single']}"
         f" -l unit --wait",
         check=False,
@@ -252,7 +259,7 @@ def cmd_full(_args):
     # Step 5: Run multi-turn attacks
     print("\n--- Step 5/6: Running multi-turn OWASP attacks ---")
     run(
-        f"hb test -e {BOT_CONFIG_FILE}"
+        f"hb test -e {bot_path}"
         f" -t {TEST_CATEGORIES['multi']}"
         f" -l unit --wait",
         check=False,

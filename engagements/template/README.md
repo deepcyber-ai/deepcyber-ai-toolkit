@@ -1,13 +1,15 @@
 # Red Team Engagement Template
 
-Reusable template for running OWASP-aligned red team assessments against any conversational AI API.
+Lightweight config-only template for running OWASP-aligned red team assessments against any conversational AI API.
+
+Tool code lives in `lib/redteam/` and is invoked via the `dcr` CLI — you only copy config files per engagement.
 
 ## Quick Start
 
 ```bash
 # 1. Copy and rename for your engagement
-cp -r samples/template samples/acme-chatbot
-cd samples/acme-chatbot
+cp -r engagements/template engagements/acme-chatbot
+cd engagements/acme-chatbot
 
 # 2. Edit the ONE config file
 vim target.yaml    # API URL, payload shape, auth mode, response field
@@ -16,10 +18,10 @@ vim target.yaml    # API URL, payload shape, auth mode, response field
 cp .env.example .env && vim .env
 
 # 4. Verify auth works
-python shared/auth.py
+dcr auth
 
 # 5. Run any tool
-cd humanbound && python redteam.py full
+dcr humanbound full
 ```
 
 ## What You Edit
@@ -37,28 +39,60 @@ cd humanbound && python redteam.py full
 | `pyrit/single_turn.py` | To add/remove `TEST_PROMPTS` |
 | `API_REFERENCE.md` | To document the target API for the team |
 
-## What You Never Edit
+## Directory Structure
 
-| File | Why |
-|------|-----|
-| `shared/config.py` | Generic config loader — reads target.yaml |
-| `shared/auth.py` | Pluggable auth dispatcher |
-| `humanbound/redteam.py` | Reads everything from target.yaml |
-| `garak/run.sh` | Generates garak config from target.yaml |
-| `giskard/scan.py` | Reads everything from target.yaml |
-| `promptfoo/setup.sh` | Generates promptfoo config from target.yaml |
-| `deepcyber/*.sh` | Workspace-agnostic launchers |
+```
+engagement-name/
+├── target.yaml          # THE config file (edit this)
+├── .env                 # Credentials (never commit)
+├── .env.example         # Credential template
+├── .gitignore
+├── API_REFERENCE.md     # Target API docs (optional)
+├── pyrit/               # Editable per engagement
+│   ├── single_turn.py   # Edit TEST_PROMPTS
+│   └── multi_turn.py    # Edit OBJECTIVE, MAX_TURNS
+├── humanbound/          # Runtime-generated (gitignored)
+│   └── bot.json
+├── garak/               # Runtime-generated (gitignored)
+│   └── target_garak.json
+├── promptfoo/           # Runtime-generated (gitignored)
+│   └── promptfooconfig.yaml
+└── results/             # Test output (gitignored)
+```
 
-## Tools Included
+## Running Tools (via dcr CLI)
 
-| Directory | Tool | What it does |
-|-----------|------|-------------|
-| `humanbound/` | [HumanBound CLI](https://humanbound.ai) | OWASP-aligned adversarial testing (single-turn, multi-turn, workflow, behavioral) |
-| `promptfoo/` | [Promptfoo](https://promptfoo.dev) | Red team with 17 plugins and 6 attack strategies |
-| `garak/` | [Garak](https://github.com/NVIDIA/garak) | LLM vulnerability scanner with encoding/DAN/injection probes |
-| `pyrit/` | [PyRIT](https://github.com/Azure/PyRIT) | Microsoft's red teaming framework (single + multi-turn) |
-| `giskard/` | [Giskard](https://giskard.ai) | LLM security scan with HTML report output |
-| `deepcyber/` | DeepCyber Toolkit | Container-based launcher that runs all tools |
+```bash
+# Verify authentication
+dcr auth
+
+# HumanBound — full workflow
+dcr humanbound full
+
+# HumanBound — single-turn only
+dcr humanbound test --single
+
+# Promptfoo — generate config + run
+dcr promptfoo
+
+# Garak — default probes
+dcr garak
+
+# Garak — specific probes
+dcr garak -p dan
+
+# PyRIT — single-turn
+dcr pyrit-single
+
+# PyRIT — multi-turn (needs OPENAI_API_KEY)
+dcr pyrit-multi
+
+# Giskard — full scan
+dcr giskard
+
+# All tools in sequence
+dcr scan
+```
 
 ## Auth Modes
 
@@ -69,88 +103,15 @@ Configure in `target.yaml` under `auth.mode`:
 - **`basic`** — HTTP Basic authentication
 - **`none`** — No authentication (open API)
 
-## Directory Structure
+## Tools
 
-```
-engagement-name/
-├── target.yaml          # THE config file (edit this)
-├── .env                 # Credentials (never commit)
-├── .env.example         # Credential template
-├── .gitignore
-├── API_REFERENCE.md     # Target API docs (optional)
-├── shared/
-│   ├── config.py        # Config loader
-│   ├── auth.py          # Auth dispatcher
-│   └── requirements.txt
-├── humanbound/
-│   ├── redteam.py
-│   ├── bot.json         # Auto-generated
-│   └── requirements.txt
-├── promptfoo/
-│   ├── setup.sh
-│   └── promptfooconfig.yaml  # Auto-generated
-├── garak/
-│   ├── run.sh
-│   └── target_garak.json     # Auto-generated
-├── pyrit/
-│   ├── single_turn.py
-│   ├── multi_turn.py
-│   └── requirements.txt
-├── giskard/
-│   ├── scan.py
-│   └── requirements.txt
-├── deepcyber/
-│   ├── run.sh
-│   └── scan.sh
-└── results/             # Test output (gitignored)
-```
-
-## Running Individual Tools
-
-```bash
-# HumanBound — full workflow
-cd humanbound && python redteam.py full
-
-# HumanBound — single-turn only
-cd humanbound && python redteam.py test --single
-
-# Promptfoo — generate config + run
-cd promptfoo && bash setup.sh
-
-# Garak — default probes
-cd garak && bash run.sh
-
-# Garak — specific probes
-cd garak && bash run.sh -p dan
-
-# PyRIT — single-turn
-cd pyrit && python single_turn.py
-
-# PyRIT — multi-turn (needs OPENAI_API_KEY)
-cd pyrit && python multi_turn.py
-
-# Giskard — full scan
-cd giskard && python scan.py
-
-# Giskard — specific detectors
-cd giskard && python scan.py --only prompt_injection
-
-# All tools via DeepCyber container
-cd deepcyber && bash run.sh
-```
-
-## Requirements
-
-Install per-tool dependencies:
-
-```bash
-pip install -r shared/requirements.txt
-pip install -r humanbound/requirements.txt   # for HumanBound
-pip install -r pyrit/requirements.txt        # for PyRIT
-pip install -r giskard/requirements.txt      # for Giskard
-npm install -g promptfoo                     # for Promptfoo
-pip install garak                            # for Garak
-```
+| Tool | What it does |
+|------|-------------|
+| [HumanBound CLI](https://humanbound.ai) | OWASP-aligned adversarial testing (single-turn, multi-turn, workflow, behavioral) |
+| [Promptfoo](https://promptfoo.dev) | Red team with 17 plugins and 6 attack strategies |
+| [Garak](https://github.com/NVIDIA/garak) | LLM vulnerability scanner with encoding/DAN/injection probes |
+| [PyRIT](https://github.com/Azure/PyRIT) | Microsoft's red teaming framework (single + multi-turn) |
+| [Giskard](https://giskard.ai) | LLM security scan with HTML report output |
 
 ---
 

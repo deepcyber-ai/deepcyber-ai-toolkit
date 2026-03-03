@@ -4,30 +4,40 @@ set -euo pipefail
 # Run all red teaming tools in sequence.
 # This script can run inside the DeepCyber container (via run.sh) or standalone.
 #
+# Expects ENGAGEMENT_DIR and DEEPCYBER_LIB to be set (by the dcr CLI).
+# Falls back to legacy layout for backward compatibility.
+#
 # Usage:
-#   bash deepcyber/scan.sh              # run all tools
-#   bash deepcyber/scan.sh promptfoo    # run only promptfoo
-#   bash deepcyber/scan.sh garak        # run only garak
-#   bash deepcyber/scan.sh pyrit        # run only pyrit
-#   bash deepcyber/scan.sh giskard      # run only giskard
-#   bash deepcyber/scan.sh humanbound   # run only humanbound
+#   bash scan.sh              # run all tools
+#   bash scan.sh promptfoo    # run only promptfoo
+#   bash scan.sh garak        # run only garak
+#   bash scan.sh pyrit        # run only pyrit
+#   bash scan.sh giskard      # run only giskard
+#   bash scan.sh humanbound   # run only humanbound
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 TOOL="${1:-all}"
 
+# Resolve directories (dcr sets these; fall back to legacy layout)
+ENGAGEMENT_DIR="${ENGAGEMENT_DIR:-$(dirname "$SCRIPT_DIR")}"
+DEEPCYBER_LIB="${DEEPCYBER_LIB:-$(dirname "$SCRIPT_DIR")}"
+export ENGAGEMENT_DIR DEEPCYBER_LIB
+
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-RESULTS_DIR="$REPO_ROOT/results/$TIMESTAMP"
+RESULTS_DIR="$ENGAGEMENT_DIR/results/$TIMESTAMP"
 mkdir -p "$RESULTS_DIR"
 
-# Load .env
-set -a; source "$REPO_ROOT/.env"; set +a
-export REPO_ROOT
+# Load .env from engagement dir
+if [ -f "$ENGAGEMENT_DIR/.env" ]; then
+  set -a; source "$ENGAGEMENT_DIR/.env"; set +a
+fi
 
 # Get a fresh token
 echo "==> Authenticating..."
 TARGET_TOKEN=$(python3 -c '
-import sys, os; sys.path.insert(0, os.environ["REPO_ROOT"])
+import sys, os
+sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
+os.environ.setdefault("ENGAGEMENT_DIR", os.environ.get("ENGAGEMENT_DIR", ""))
 from shared.config import load_target_config
 from shared.auth import get_token
 config = load_target_config()
@@ -42,39 +52,37 @@ echo ""
 
 run_promptfoo() {
   echo "===== Promptfoo ====="
-  cd "$REPO_ROOT/promptfoo"
-  bash "$REPO_ROOT/promptfoo/setup.sh" run 2>&1 \
+  bash "$DEEPCYBER_LIB/promptfoo/setup.sh" run 2>&1 \
     | tee "$RESULTS_DIR/promptfoo.log"
   echo ""
 }
 
 run_garak() {
   echo "===== Garak ====="
-  cd "$REPO_ROOT"
-  bash "$REPO_ROOT/garak/run.sh" 2>&1 \
+  bash "$DEEPCYBER_LIB/garak/run.sh" 2>&1 \
     | tee "$RESULTS_DIR/garak.log"
   echo ""
 }
 
 run_pyrit() {
   echo "===== PyRIT (single-turn) ====="
-  cd "$REPO_ROOT/pyrit"
+  cd "$ENGAGEMENT_DIR/pyrit"
   python3 single_turn.py 2>&1 | tee "$RESULTS_DIR/pyrit_single.log"
   echo ""
 }
 
 run_giskard() {
   echo "===== Giskard ====="
-  cd "$REPO_ROOT/giskard"
-  python3 scan.py --output "$RESULTS_DIR/giskard_report.html" 2>&1 \
+  python3 "$DEEPCYBER_LIB/giskard/scan.py" \
+    --output "$RESULTS_DIR/giskard_report.html" 2>&1 \
     | tee "$RESULTS_DIR/giskard.log"
   echo ""
 }
 
 run_humanbound() {
   echo "===== HumanBound ====="
-  cd "$REPO_ROOT/humanbound"
-  python3 redteam.py full 2>&1 | tee "$RESULTS_DIR/humanbound.log"
+  python3 "$DEEPCYBER_LIB/humanbound/redteam.py" full 2>&1 \
+    | tee "$RESULTS_DIR/humanbound.log"
   echo ""
 }
 

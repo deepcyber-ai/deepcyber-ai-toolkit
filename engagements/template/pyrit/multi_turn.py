@@ -15,8 +15,6 @@ import os
 import sys
 import textwrap
 
-# Add engagement root to path for shared modules
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from shared.config import load_target_config, get_api_url, get_response_field
 from shared.auth import get_auth_headers
 

@@ -6,28 +6,37 @@ set -euo pipefail
 # Reads target.yaml to export TARGET_* environment variables that the
 # promptfooconfig.yaml references via {{env.TARGET_*}} placeholders.
 #
+# Expects ENGAGEMENT_DIR and DEEPCYBER_LIB to be set (by the dcr CLI).
+# Falls back to REPO_ROOT for backward compatibility.
+#
 # Usage:
 #   bash setup.sh                        # generate config + run
 #   bash setup.sh generate               # generate promptfooconfig.yaml only
 #   bash setup.sh run                    # run only (assumes config exists)
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 ACTION="${1:-all}"
 
-# Load .env
-if [ ! -f "$REPO_ROOT/.env" ]; then
-  echo "Error: .env not found. Copy .env.example to .env and fill in credentials."
-  exit 1
+# Resolve directories (dcr sets these; fall back to legacy layout)
+ENGAGEMENT_DIR="${ENGAGEMENT_DIR:-$(dirname "$SCRIPT_DIR")}"
+DEEPCYBER_LIB="${DEEPCYBER_LIB:-$(dirname "$SCRIPT_DIR")}"
+export ENGAGEMENT_DIR DEEPCYBER_LIB
+
+# Load .env from engagement dir
+if [ -f "$ENGAGEMENT_DIR/.env" ]; then
+  set -a; source "$ENGAGEMENT_DIR/.env"; set +a
 fi
-set -a; source "$REPO_ROOT/.env"; set +a
-export REPO_ROOT
+
+# Output directory inside engagement
+PF_DIR="$ENGAGEMENT_DIR/promptfoo"
+mkdir -p "$PF_DIR"
 
 # Export TARGET_* vars from target.yaml for promptfoo
 echo "==> Reading target.yaml..."
 eval "$(python3 -c '
 import sys, os, json
-sys.path.insert(0, os.environ["REPO_ROOT"])
+sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
+os.environ.setdefault("ENGAGEMENT_DIR", os.environ.get("ENGAGEMENT_DIR", ""))
 from shared.config import load_target_config, get_api_url, get_response_field
 from shared.auth import get_token
 
@@ -59,7 +68,8 @@ generate_config() {
   echo "==> Generating promptfooconfig.yaml..."
   python3 -c '
 import sys, os, json, yaml
-sys.path.insert(0, os.environ["REPO_ROOT"])
+sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
+os.environ.setdefault("ENGAGEMENT_DIR", os.environ.get("ENGAGEMENT_DIR", ""))
 from shared.config import load_target_config, get_api_url, get_response_field
 
 config = load_target_config()
@@ -135,7 +145,8 @@ pf_config = {
     },
 }
 
-out_path = os.path.join(os.environ["REPO_ROOT"], "promptfoo", "promptfooconfig.yaml")
+out_path = os.path.join(os.environ["ENGAGEMENT_DIR"], "promptfoo", "promptfooconfig.yaml")
+os.makedirs(os.path.dirname(out_path), exist_ok=True)
 with open(out_path, "w") as f:
     yaml.dump(pf_config, f, default_flow_style=False, sort_keys=False)
 print(f"    Written to {out_path}")
@@ -144,7 +155,7 @@ print(f"    Written to {out_path}")
 
 run_scan() {
   echo "==> Running Promptfoo red team..."
-  cd "$SCRIPT_DIR"
+  cd "$PF_DIR"
   npx promptfoo@latest redteam run
 }
 

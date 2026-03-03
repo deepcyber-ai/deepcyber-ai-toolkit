@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+set -euo pipefail
+#
+# dcr — DeepCyber Redteam CLI
+#
+# Single entry point for running all red teaming tools against a target API.
+# Auto-detects DEEPCYBER_LIB from its own location. Uses cwd or -d flag
+# for the engagement directory.
+#
+# Usage:
+#   dcr auth                       # verify auth (from engagement dir)
+#   dcr humanbound full            # run humanbound full workflow
+#   dcr humanbound test --single   # run single-turn attacks
+#   dcr promptfoo                  # generate config + run
+#   dcr garak                      # default probes
+#   dcr garak -p dan               # DAN jailbreak probes
+#   dcr pyrit-single               # runs engagement's pyrit/single_turn.py
+#   dcr pyrit-multi                # runs engagement's pyrit/multi_turn.py
+#   dcr giskard                    # full vulnerability scan
+#   dcr scan                       # all tools in sequence
+#   dcr -d ~/engagements/acme humanbound full   # explicit engagement dir
+#
+# (c) 2026 Deep Cyber Ltd. All rights reserved.
+
+VERSION="0.1.0"
+
+# ── Resolve DEEPCYBER_LIB from this script's location ────────────────
+BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
+export DEEPCYBER_LIB="${DEEPCYBER_LIB:-$(cd "$BIN_DIR/../lib/redteam" && pwd)}"
+
+# ── Parse -d flag for explicit engagement dir ────────────────────────
+ENGAGEMENT_DIR=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -d|--dir)
+      ENGAGEMENT_DIR="$(cd "$2" && pwd)"
+      shift 2
+      ;;
+    -h|--help)
+      _show_help=1
+      shift
+      ;;
+    -v|--version)
+      echo "dcr $VERSION"
+      exit 0
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+# Default engagement dir to cwd
+export ENGAGEMENT_DIR="${ENGAGEMENT_DIR:-$(pwd)}"
+
+# ── Help ─────────────────────────────────────────────────────────────
+show_help() {
+  cat <<'HELP'
+dcr — DeepCyber Redteam CLI
+
+Usage: dcr [options] <command> [args...]
+
+Options:
+  -d, --dir DIR    Engagement directory (default: cwd)
+  -v, --version    Show version
+  -h, --help       Show this help
+
+Commands:
+  auth             Verify authentication against the target API
+  humanbound ...   Run HumanBound red teaming (setup|init|test|full|logs|posture|guardrails)
+  promptfoo        Generate config and run Promptfoo red team scan
+  garak [args]     Run Garak probes (pass -p, -d flags through)
+  pyrit-single     Run PyRIT single-turn adversarial prompts
+  pyrit-multi      Run PyRIT multi-turn attack (needs OPENAI_API_KEY)
+  giskard          Run Giskard vulnerability scan
+  scan [tool]      Run all tools (or a specific one)
+
+Examples:
+  cd ~/engagements/acme-chatbot
+  dcr auth
+  dcr humanbound full
+  dcr promptfoo
+  dcr garak -p dan
+  dcr scan
+HELP
+}
+
+if [[ "${_show_help:-}" == "1" ]] || [[ $# -eq 0 ]]; then
+  show_help
+  exit 0
+fi
+
+# ── Validate engagement dir ──────────────────────────────────────────
+if [ ! -f "$ENGAGEMENT_DIR/target.yaml" ]; then
+  echo "Error: target.yaml not found in $ENGAGEMENT_DIR"
+  echo ""
+  echo "Either:"
+  echo "  1. cd into your engagement directory and run dcr"
+  echo "  2. Use: dcr -d /path/to/engagement <command>"
+  exit 1
+fi
+
+# ── Load .env from engagement dir ────────────────────────────────────
+if [ -f "$ENGAGEMENT_DIR/.env" ]; then
+  set -a; source "$ENGAGEMENT_DIR/.env"; set +a
+fi
+
+# ── Add DEEPCYBER_LIB to PYTHONPATH ─────────────────────────────────
+export PYTHONPATH="${DEEPCYBER_LIB}${PYTHONPATH:+:$PYTHONPATH}"
+
+# ── Dispatch command ─────────────────────────────────────────────────
+COMMAND="$1"
+shift
+
+case "$COMMAND" in
+  auth)
+    python3 "$DEEPCYBER_LIB/shared/auth.py" "$@"
+    ;;
+
+  humanbound)
+    python3 "$DEEPCYBER_LIB/humanbound/redteam.py" "$@"
+    ;;
+
+  promptfoo)
+    bash "$DEEPCYBER_LIB/promptfoo/setup.sh" "$@"
+    ;;
+
+  garak)
+    bash "$DEEPCYBER_LIB/garak/run.sh" "$@"
+    ;;
+
+  pyrit-single)
+    if [ ! -f "$ENGAGEMENT_DIR/pyrit/single_turn.py" ]; then
+      echo "Error: pyrit/single_turn.py not found in $ENGAGEMENT_DIR"
+      echo "Copy it from the engagement template."
+      exit 1
+    fi
+    cd "$ENGAGEMENT_DIR/pyrit"
+    python3 single_turn.py "$@"
+    ;;
+
+  pyrit-multi)
+    if [ ! -f "$ENGAGEMENT_DIR/pyrit/multi_turn.py" ]; then
+      echo "Error: pyrit/multi_turn.py not found in $ENGAGEMENT_DIR"
+      echo "Copy it from the engagement template."
+      exit 1
+    fi
+    cd "$ENGAGEMENT_DIR/pyrit"
+    python3 multi_turn.py "$@"
+    ;;
+
+  giskard)
+    python3 "$DEEPCYBER_LIB/giskard/scan.py" "$@"
+    ;;
+
+  scan)
+    bash "$DEEPCYBER_LIB/deepcyber/scan.sh" "$@"
+    ;;
+
+  help)
+    show_help
+    ;;
+
+  *)
+    echo "Unknown command: $COMMAND"
+    echo "Run 'dcr --help' for usage."
+    exit 1
+    ;;
+esac

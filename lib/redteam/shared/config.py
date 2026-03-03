@@ -21,20 +21,27 @@ _CONFIG_CACHE = None
 def load_target_config():
     """Load and return the target configuration from target.yaml.
 
-    Searches for target.yaml in: REPO_ROOT env var, parent dir, current dir.
+    Searches for target.yaml in (first match wins):
+      1. ENGAGEMENT_DIR env var (set by dcr CLI)
+      2. REPO_ROOT env var (legacy)
+      3. Parent of this file (legacy: code alongside config)
+      4. Current working directory
+      5. Parent of current working directory
+
     Also loads .env from the same directory as target.yaml.
     """
     global _CONFIG_CACHE
     if _CONFIG_CACHE is not None:
         return _CONFIG_CACHE
 
-    search_dirs = [
-        os.path.join(os.path.dirname(__file__), ".."),
-        os.getcwd(),
-        os.path.join(os.getcwd(), ".."),
-    ]
+    search_dirs = []
+    if os.environ.get("ENGAGEMENT_DIR"):
+        search_dirs.append(os.environ["ENGAGEMENT_DIR"])
     if os.environ.get("REPO_ROOT"):
-        search_dirs.insert(0, os.environ["REPO_ROOT"])
+        search_dirs.append(os.environ["REPO_ROOT"])
+    search_dirs.append(os.path.join(os.path.dirname(__file__), ".."))
+    search_dirs.append(os.getcwd())
+    search_dirs.append(os.path.join(os.getcwd(), ".."))
 
     config_path = None
     for d in search_dirs:
@@ -46,7 +53,7 @@ def load_target_config():
     if config_path is None:
         sys.exit(
             "Error: target.yaml not found.\n"
-            "Are you in the engagement directory?"
+            "Set ENGAGEMENT_DIR or run from the engagement directory."
         )
 
     # Load .env from same directory
@@ -58,8 +65,16 @@ def load_target_config():
     with open(config_path) as f:
         config = yaml.safe_load(f)
 
+    config["_engagement_dir"] = os.path.dirname(config_path)
     _CONFIG_CACHE = config
     return config
+
+
+def get_engagement_dir(config=None):
+    """Return the absolute path to the engagement directory."""
+    if config is None:
+        config = load_target_config()
+    return config.get("_engagement_dir", os.getcwd())
 
 
 def get_api_url(config=None):
