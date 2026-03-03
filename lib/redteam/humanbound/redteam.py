@@ -25,7 +25,7 @@ import os
 import subprocess
 import sys
 
-from shared.config import load_target_config, get_api_url, get_request_body, get_engagement_dir
+from shared.config import load_target_config, get_api_url, get_request_body, get_engagement_dir, load_policy, build_policy_text
 from shared.auth import get_auth_headers
 
 
@@ -136,13 +136,38 @@ def cmd_setup(_args):
     print(f"  Chat completion: uses $PROMPT placeholder for attack payloads")
 
 
+def _write_policy_prompt(config):
+    """Write policy text to a temp file for HumanBound --prompt flag.
+
+    Returns the file path, or None if no policy is defined.
+    """
+    policy = load_policy(config)
+    if not policy:
+        return None
+    policy_text = build_policy_text(policy)
+    if not policy_text:
+        return None
+    prompt_path = os.path.join(get_engagement_dir(config), "humanbound", "policy_prompt.txt")
+    os.makedirs(os.path.dirname(prompt_path), exist_ok=True)
+    with open(prompt_path, "w") as f:
+        f.write(policy_text)
+    return prompt_path
+
+
 def cmd_init(_args):
     """Scan the bot and create a HumanBound project."""
     ensure_logged_in()
     ensure_bot_json()
     config = load_target_config()
     name = config["target"]["name"]
-    run(f'hb init --name "{name}" --endpoint {_bot_config_path()} --yes')
+
+    # Pass policy as scope prompt if available
+    prompt_path = _write_policy_prompt(config)
+    prompt_flag = f" --prompt {prompt_path}" if prompt_path else ""
+    if prompt_path:
+        print("==> Policy loaded — passing as scope prompt to HumanBound")
+
+    run(f'hb init --name "{name}" --endpoint {_bot_config_path()}{prompt_flag} --yes')
 
 
 def cmd_test(args):
@@ -242,10 +267,14 @@ def cmd_full(_args):
     print("\n--- Step 2/6: Checking authentication ---")
     ensure_logged_in()
 
-    # Step 3: Init project
+    # Step 3: Init project (with policy if available)
     bot_path = _bot_config_path()
     print("\n--- Step 3/6: Scanning bot and creating project ---")
-    run(f'hb init --name "{target_name}" --endpoint {bot_path} --yes')
+    prompt_path = _write_policy_prompt(config)
+    prompt_flag = f" --prompt {prompt_path}" if prompt_path else ""
+    if prompt_path:
+        print("    Policy loaded — passing as scope prompt")
+    run(f'hb init --name "{target_name}" --endpoint {bot_path}{prompt_flag} --yes')
 
     # Step 4: Run single-turn attacks
     print("\n--- Step 4/6: Running single-turn OWASP attacks ---")

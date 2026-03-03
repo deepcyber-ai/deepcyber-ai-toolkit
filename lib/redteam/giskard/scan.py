@@ -26,6 +26,8 @@ from shared.config import (
     get_request_body,
     get_engagement_dir,
     extract_response,
+    load_policy,
+    build_policy_text,
 )
 from shared.auth import get_auth_headers
 
@@ -83,6 +85,14 @@ def main():
     target_name = config["target"]["name"]
     description = config["target"].get("description", "")
     api_url = get_api_url(config)
+
+    # Enrich description with policy if available
+    policy = load_policy(config)
+    if policy:
+        policy_text = build_policy_text(policy)
+        base_desc = description.strip() if isinstance(description, str) else str(description).strip()
+        description = f"{base_desc}\n\n{policy_text}" if base_desc else policy_text
+        print("==> Policy loaded — enriching model description for detectors")
 
     print(f"==> Target: {target_name}")
     print(f"==> API:    {api_url}")

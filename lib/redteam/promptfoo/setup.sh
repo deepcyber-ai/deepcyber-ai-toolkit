@@ -70,13 +70,25 @@ generate_config() {
 import sys, os, json, yaml
 sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
 os.environ.setdefault("ENGAGEMENT_DIR", os.environ.get("ENGAGEMENT_DIR", ""))
-from shared.config import load_target_config, get_api_url, get_response_field
+from shared.config import load_target_config, get_api_url, get_response_field, load_policy, build_policy_text
 
 config = load_target_config()
 api_url = get_api_url(config)
 resp_field = get_response_field(config)
 name = config["target"]["name"]
 description = config["target"].get("description", "")
+
+# Load policy and enrich purpose
+policy = load_policy(config)
+policy_text = build_policy_text(policy) if policy else ""
+if policy:
+    # Combine target description with policy for a richer purpose
+    purpose_parts = [description.strip()] if description.strip() else []
+    if policy.get("allowed_topics"):
+        purpose_parts.append("Allowed: " + "; ".join(policy["allowed_topics"]))
+    if policy.get("expected_boundaries"):
+        purpose_parts.append("Boundaries: " + "; ".join(policy["expected_boundaries"]))
+    description = " | ".join(purpose_parts) if purpose_parts else description
 
 # Build headers
 headers = {
@@ -144,6 +156,13 @@ pf_config = {
         ],
     },
 }
+
+# Add policy-based plugins if policy exists
+if policy:
+    for topic in policy.get("forbidden_topics", []):
+        pf_config["redteam"]["plugins"].append({"id": "policy", "config": {"policy": f"The AI must not discuss: {topic}"}})
+    for rule in policy.get("must_refuse", []):
+        pf_config["redteam"]["plugins"].append({"id": "policy", "config": {"policy": f"The AI must refuse: {rule}"}})
 
 out_path = os.path.join(os.environ["ENGAGEMENT_DIR"], "promptfoo", "promptfooconfig.yaml")
 os.makedirs(os.path.dirname(out_path), exist_ok=True)

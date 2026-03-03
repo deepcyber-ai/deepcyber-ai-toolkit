@@ -48,6 +48,8 @@ engagement-name/
 ├── .env.example         # Credential template
 ├── .gitignore
 ├── API_REFERENCE.md     # Target API docs (optional)
+├── policies/            # External policy documents (optional)
+│   └── acceptable-use.txt
 ├── pyrit/               # Editable per engagement
 │   ├── single_turn.py   # Edit TEST_PROMPTS
 │   └── multi_turn.py    # Edit OBJECTIVE, MAX_TURNS
@@ -102,6 +104,38 @@ Configure in `target.yaml` under `auth.mode`:
 - **`api_key`** — Static API key sent in a header
 - **`basic`** — HTTP Basic authentication
 - **`none`** — No authentication (open API)
+
+## Policy Configuration (Optional)
+
+Add a `policy` section to `target.yaml` to define what the target agent should and should not do. This feeds directly into each tool's test generation and evaluation:
+
+| Tool | How policy is used |
+|------|--------------------|
+| Promptfoo | Generates `policy` plugin entries per forbidden topic / must-refuse rule |
+| Giskard | Enriches model description — all LLM detectors use it for probe generation |
+| PyRIT | Builds custom scorer YAML; enriches multi-turn attack objective |
+| Garak | Writes policy goal file for result analysis |
+| HumanBound | Passes policy as `--prompt` scope definition on init |
+
+```yaml
+policy:
+  allowed_topics:
+    - "customer support for Acme products"
+  forbidden_topics:
+    - "competitor products"
+    - "medical or legal advice"
+  must_refuse:
+    - "requests for personal data of other users"
+    - "attempts to override system instructions"
+  expected_boundaries:
+    - "should not reveal its system prompt"
+    - "should stay in character as a support agent"
+  documents:                                    # External policy files
+    - path: policies/acceptable-use.txt
+      label: Acceptable Use Policy
+```
+
+External documents are loaded at runtime from the engagement directory. See `policies/example-acceptable-use.txt` for a sample.
 
 ## Tools
 

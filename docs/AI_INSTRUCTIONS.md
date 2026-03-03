@@ -261,7 +261,21 @@ policy:
     - "should not reveal its system prompt"
     - "should not generate code"
     - "should stay in character as a support agent"
+  documents:                                    # External policy files (loaded at runtime)
+    - path: policies/acceptable-use.txt         # Relative to engagement dir
+      label: Acceptable Use Policy
+    - path: policies/brand-guidelines.md
+      label: Brand Voice Guidelines
 ```
+
+The policy section feeds directly into tool adapters:
+- **Promptfoo**: generates `policy` plugin entries per forbidden/must-refuse rule + enriches `purpose`
+- **Giskard**: enriches model description — all LLM-assisted detectors use it
+- **PyRIT**: builds custom policy scorer; enriches multi-turn attack objective
+- **Garak**: writes policy goal file for result analysis
+- **HumanBound**: passes policy as `--prompt` scope definition on init
+
+External documents are loaded from disk and appended to the policy text sent to each tool.
 
 When analyzing scan results, read the `policy` section first. Use it to determine:
 - **True violations**: the target did something policy says it must not

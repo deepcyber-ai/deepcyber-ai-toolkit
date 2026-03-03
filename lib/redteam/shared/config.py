@@ -123,6 +123,66 @@ def extract_response(json_data, config=None):
     return obj
 
 
+def load_policy(config=None):
+    """Load the policy section from target.yaml, including external documents.
+
+    Returns a dict with keys: allowed_topics, forbidden_topics, must_refuse,
+    expected_boundaries, documents (list of {label, content} dicts).
+    Returns None if no policy section exists.
+    """
+    if config is None:
+        config = load_target_config()
+
+    policy = config.get("policy")
+    if not policy:
+        return None
+
+    eng_dir = get_engagement_dir(config)
+    docs = []
+    for doc in policy.get("documents", []):
+        doc_path = os.path.join(eng_dir, doc["path"])
+        if os.path.isfile(doc_path):
+            with open(doc_path) as f:
+                docs.append({"label": doc.get("label", doc["path"]), "content": f.read()})
+        else:
+            print(f"Warning: policy document not found: {doc_path}", file=sys.stderr)
+
+    return {
+        "allowed_topics": policy.get("allowed_topics", []),
+        "forbidden_topics": policy.get("forbidden_topics", []),
+        "must_refuse": policy.get("must_refuse", []),
+        "expected_boundaries": policy.get("expected_boundaries", []),
+        "documents": docs,
+    }
+
+
+def build_policy_text(policy):
+    """Convert a policy dict into a single text block for tool consumption.
+
+    Tools that accept free-text policy descriptions (Promptfoo graderGuidance,
+    Giskard model description, PyRIT scorer, Garak detector goal) use this.
+    """
+    if not policy:
+        return ""
+
+    sections = []
+    for key, heading in [
+        ("allowed_topics", "ALLOWED TOPICS"),
+        ("forbidden_topics", "FORBIDDEN TOPICS"),
+        ("must_refuse", "MUST REFUSE"),
+        ("expected_boundaries", "EXPECTED BOUNDARIES"),
+    ]:
+        items = policy.get(key, [])
+        if items:
+            lines = "\n".join(f"- {item}" for item in items)
+            sections.append(f"{heading}:\n{lines}")
+
+    for doc in policy.get("documents", []):
+        sections.append(f"--- {doc['label']} ---\n{doc['content']}")
+
+    return "\n\n".join(sections)
+
+
 def _substitute(obj, placeholder, value):
     """Recursively substitute *placeholder* with *value* in a nested structure."""
     if isinstance(obj, str):

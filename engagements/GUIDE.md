@@ -33,6 +33,18 @@ Then set the auth mode (`bearer_cognito`, `api_key`, `basic`, or `none`).
 
 See `engagements/examples/` for common patterns.
 
+### Step 2b — Define agent policies (optional)
+
+Uncomment the `policy` section in `target.yaml` and fill in what the agent should and should not do:
+
+- **`allowed_topics`** — what the agent is designed to help with
+- **`forbidden_topics`** — subjects it must avoid entirely
+- **`must_refuse`** — specific request types it must reject
+- **`expected_boundaries`** — behavioural rules it should follow
+- **`documents`** — paths to external policy files (relative to engagement dir)
+
+If defined, each tool uses the policy to generate more targeted tests and evaluate responses against your rules.
+
 ### Step 3 — Set credentials
 
 ```bash
@@ -253,6 +265,7 @@ dcr humanbound setup
 
 ```
 [ ] target.yaml configured
+[ ] policy section defined (optional but recommended)
 [ ] .env credentials set
 [ ] dcr auth passes
 [ ] Manual recon (3-5 test prompts)

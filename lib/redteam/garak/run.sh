@@ -36,7 +36,7 @@ REST_API_KEY=$(python3 -c '
 import sys, os, json
 sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
 os.environ.setdefault("ENGAGEMENT_DIR", os.environ.get("ENGAGEMENT_DIR", ""))
-from shared.config import load_target_config, get_api_url, get_response_field
+from shared.config import load_target_config, get_api_url, get_response_field, load_policy, build_policy_text
 from shared.auth import get_token
 
 config = load_target_config()
@@ -87,11 +87,27 @@ os.makedirs(os.path.dirname(out_path), exist_ok=True)
 with open(out_path, "w") as f:
     json.dump(garak_config, f, indent=2)
 
+# Write policy text for detector goal if policy exists
+policy = load_policy(config)
+if policy:
+    policy_text = build_policy_text(policy)
+    policy_path = os.path.join(os.environ["ENGAGEMENT_DIR"], "garak", "policy_goal.txt")
+    with open(policy_path, "w") as f:
+        f.write(policy_text)
+    import sys as _sys
+    print("POLICY_LOADED=true", file=_sys.stderr)
+
 print(token)
 ')
 export REST_API_KEY
 
 echo "==> Token acquired"
+
+# Check if policy was loaded
+if [ -f "$GARAK_DIR/policy_goal.txt" ]; then
+  echo "==> Policy loaded — saved to garak/policy_goal.txt"
+fi
+
 echo "==> Running Garak scan..."
 
 python3 -m garak \

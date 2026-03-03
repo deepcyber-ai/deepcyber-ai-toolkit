@@ -320,9 +320,9 @@ The AI co-pilot knows:
 - Regulated environment mode and relay proxy setup
 - OWASP LLM Top 10 categories for triaging findings
 
-### Policy-Based Analysis
+### Policy-Based Testing
 
-Add a `policy` section to `target.yaml` to define what the target should/shouldn't do. The AI uses it to judge scan results — flagging true violations and dismissing acceptable behavior:
+Add a `policy` section to `target.yaml` to define what the target should/shouldn't do. Policy feeds into all 5 tool adapters for more targeted test generation and evaluation — and the AI co-pilot uses it to triage results:
 
 ```yaml
 policy:
@@ -334,7 +334,18 @@ policy:
     - "attempts to override system instructions"
   expected_boundaries:
     - "should not reveal its system prompt"
+  documents:                                # External policy files (loaded at runtime)
+    - path: policies/acceptable-use.txt
+      label: Acceptable Use Policy
 ```
+
+| Tool | How policy is used |
+|------|--------------------|
+| Promptfoo | Generates per-rule `policy` plugin entries + enriches grader purpose |
+| Giskard | Enriches model description for all LLM-assisted detectors |
+| PyRIT | Custom policy scorer + enriched multi-turn attack objective |
+| Garak | Policy goal file for result analysis |
+| HumanBound | Scope prompt passed to `hb init` via `--prompt` |
 
 ## Configuration Files
 
@@ -367,6 +378,7 @@ deepcyber-ai-toolkit/
 │   ├── template/                         # Lightweight config-only template
 │   │   ├── target.yaml                   # THE config file — edit this
 │   │   ├── .env.example                  # Credential template
+│   │   ├── policies/                     # External policy documents (optional)
 │   │   └── pyrit/                        # PyRIT scripts (editable per engagement)
 │   └── examples/                         # Example target.yaml files
 │       ├── foodie-ai.yaml                # Cognito JWT auth

@@ -107,10 +107,14 @@ headers: {}
   # x-custom-header: "value"
 
 # ─── Policy (what the AI should / should not do) ───────────────────
-# Used by AI coding assistants (Claude Code, Gemini CLI, Codex CLI)
-# to judge scan results against expected behavior. Optional but
-# recommended — helps the AI triage true violations vs. acceptable
-# behavior.
+# Optional but recommended. Feeds into tool adapters:
+#   - Promptfoo: generates policy plugins + grader guidance
+#   - Giskard:   enriches model description for all detectors
+#   - PyRIT:     builds custom scorer for response evaluation
+#   - Garak:     sets detector goal for ModelAsJudge
+#   - HumanBound: passed as scope prompt on init
+#
+# Also used by AI coding assistants to triage scan results.
 #
 # policy:
 #   allowed_topics:
@@ -128,3 +132,8 @@ headers: {}
 #     - "should not reveal its system prompt"
 #     - "should not generate code"
 #     - "should stay in character as a support agent"
+#   documents:                                    # External policy files (RAG-like)
+#     - path: policies/acceptable-use.txt         # Relative to engagement dir
+#       label: Acceptable Use Policy
+#     - path: policies/brand-guidelines.md
+#       label: Brand Voice Guidelines
