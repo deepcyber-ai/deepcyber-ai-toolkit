@@ -1,25 +1,8 @@
 # DeepCyber Red Team Engagement Guide
 
-A step-by-step cheatsheet for running an OWASP-aligned red team assessment against any conversational AI API.
+Step-by-step cheatsheet for running an OWASP-aligned red team assessment against any conversational AI API.
 
----
-
-## Phase 0: Prerequisites (one-time setup)
-
-```bash
-# Python packages (shared across all engagements)
-pip install requests python-dotenv pyyaml
-
-# Tool-specific installs (install what you need)
-pip install humanbound-cli          # HumanBound
-npm install -g promptfoo            # Promptfoo
-pip install garak                   # Garak
-pip install pyrit-core              # PyRIT
-pip install "giskard[llm]" pandas   # Giskard
-
-# HumanBound account (one-time)
-hb login
-```
+All tools are pre-installed in the DeepCyber container.
 
 ---
 
@@ -28,16 +11,15 @@ hb login
 ### Step 1 — Copy the template
 
 ```bash
-cd deepcyber-ai-toolkit/samples
-cp -r template acme-chatbot       # rename to your client/target
-cd acme-chatbot
+cp -r engagements/template engagements/acme-chatbot
+cd engagements/acme-chatbot
 ```
 
 ### Step 2 — Configure the target
 
-Edit `target.yaml` — this is the **only config file** all tools read from.
+Edit `target.yaml` — the **only config file** all tools read from.
 
-You need to fill in 5 things:
+Fill in these 5 fields:
 
 | Field | Example | Where to find it |
 |-------|---------|-------------------|
@@ -49,68 +31,7 @@ You need to fill in 5 things:
 
 Then set the auth mode (`bearer_cognito`, `api_key`, `basic`, or `none`).
 
-**Common target.yaml patterns:**
-
-```yaml
-# ── Simple API with API key ──
-target:
-  name: "Acme Chatbot"
-  description: >
-    Customer support chatbot for Acme Corp. Handles order tracking,
-    returns, and product questions. Should not discuss competitors
-    or provide legal/medical advice.
-api:
-  url: "https://api.acme.com"
-  method: POST
-  path: "/chat"
-request:
-  content_type: "application/json"
-  body:
-    message: "{{PROMPT}}"
-response:
-  field: "reply"
-auth:
-  mode: "api_key"
-  api_key:
-    header: "x-api-key"
-    prefix: ""
-    env_var: "TARGET_API_KEY"
-session:
-  header: ""              # no session management
-  init_command: ""
-  cleanup_command: ""
-headers: {}
-```
-
-```yaml
-# ── OpenAI-compatible API ──
-request:
-  body:
-    model: "gpt-4"
-    messages:
-      - role: "user"
-        content: "{{PROMPT}}"
-response:
-  field: "choices.0.message.content"
-auth:
-  mode: "api_key"
-  api_key:
-    header: "Authorization"
-    prefix: "Bearer "
-    env_var: "TARGET_API_KEY"
-```
-
-```yaml
-# ── Cognito JWT auth (like Foodie AI) ──
-auth:
-  mode: "bearer_cognito"
-  cognito:
-    token_endpoint: "/auth/token"
-    token_request_body:
-      username: "{{USERNAME}}"
-      password: "{{PASSWORD}}"
-    token_response_field: "id_token"
-```
+See `engagements/examples/` for common patterns.
 
 ### Step 3 — Set credentials
 
@@ -155,7 +76,6 @@ If this fails, fix `target.yaml` and `.env` before proceeding.
 Before attacking, understand the target. Send a few manual requests:
 
 ```bash
-# Quick manual test (adjust to your API)
 python3 -c "
 import sys; sys.path.insert(0, '.')
 from shared.config import load_target_config, get_api_url, get_request_body, extract_response
@@ -210,8 +130,7 @@ cd ..
 ```bash
 cd promptfoo
 bash setup.sh                      # generates config + runs scan
-# View report in browser:
-npx promptfoo@latest redteam report
+npx promptfoo@latest redteam report   # view report in browser
 cd ..
 ```
 
@@ -233,7 +152,7 @@ Microsoft's red teaming framework. Good for custom prompt lists.
 
 ```bash
 cd pyrit
-python single_turn.py              # 7 adversarial prompts
+python single_turn.py
 cd ..
 ```
 
@@ -244,8 +163,7 @@ Produces a nice HTML report covering injection, disclosure, harmful content.
 ```bash
 cd giskard
 python scan.py                     # all detectors
-# or specific:
-python scan.py --only prompt_injection information_disclosure
+python scan.py --only prompt_injection information_disclosure   # or specific
 cd ..
 ```
 
@@ -279,22 +197,17 @@ cd ..
 ### Collect everything
 
 ```bash
-# HumanBound results
+# HumanBound
 cd humanbound
-python redteam.py logs             # all findings
-python redteam.py logs --failed    # failures only
-python redteam.py posture          # security score
-
-# Export HumanBound guardrails
+python redteam.py logs --failed
+python redteam.py posture
 python redteam.py guardrails --format json -o ../results/guardrails.json
 cd ..
 
-# Promptfoo results
-cd promptfoo
-npx promptfoo@latest redteam report   # opens browser
-cd ..
+# Promptfoo
+cd promptfoo && npx promptfoo@latest redteam report && cd ..
 
-# Giskard HTML report
+# Giskard
 open giskard/giskard_report.html
 ```
 
@@ -319,7 +232,6 @@ open giskard/giskard_report.html
 ## Phase 5: Report & Harden
 
 ```bash
-# Export guardrail rules for the client
 cd humanbound
 python redteam.py guardrails --vendor openai --format json -o ../results/guardrails_openai.json
 python redteam.py guardrails --vendor humanbound --format yaml -o ../results/guardrails_hb.yaml
@@ -340,21 +252,19 @@ Deliverables:
 ### Full automated scan (all tools, ~2 hours)
 
 ```bash
-cd deepcyber
-bash scan.sh                       # runs all tools in sequence
+cd deepcyber && bash scan.sh
 ```
 
 ### Just HumanBound (fastest value, ~1 hour)
 
 ```bash
-cd humanbound
-python redteam.py full             # setup + init + single + multi + results
+cd humanbound && python redteam.py full
 ```
 
 ### Refresh auth token (tokens expire after ~1 hour)
 
 ```bash
-cd humanbound && python redteam.py setup   # regenerates bot.json with fresh token
+cd humanbound && python redteam.py setup
 ```
 
 ### Engagement checklist

@@ -1,6 +1,9 @@
-# ═══════════════════════════════════════════════════════════════════════
-# target.yaml — Foodie AI Red Team Engagement
-# ═══════════════════════════════════════════════════════════════════════
+# Foodie AI — Cognito JWT auth, simple request body
+#
+# API: POST https://api.foodie-ai.xyz/
+# Auth: Username/password exchanged for JWT via /auth/token
+# Body: {"input": "..."}
+# Response: {"response": "..."}
 
 target:
   name: "Foodie AI"

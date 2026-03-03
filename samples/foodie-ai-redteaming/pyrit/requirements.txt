@@ -1,3 +1,0 @@
-pyrit-core
-requests
-python-dotenv

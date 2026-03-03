@@ -1,3 +1,0 @@
-aiandme-cli
-python-dotenv
-requests

@@ -1,4 +1,0 @@
-humanbound-cli
-python-dotenv
-requests
-pyyaml

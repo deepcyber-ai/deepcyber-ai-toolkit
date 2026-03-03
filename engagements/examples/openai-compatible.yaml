@@ -1,0 +1,43 @@
+# OpenAI-compatible API — Bearer token, messages array
+#
+# Works with any API that follows the OpenAI chat completions format:
+# Azure OpenAI, vLLM, LiteLLM, LocalAI, Ollama (with OpenAI compat), etc.
+#
+# Body: {"model": "...", "messages": [{"role": "user", "content": "..."}]}
+# Response: {"choices": [{"message": {"content": "..."}}]}
+
+target:
+  name: "CHANGEME"
+  description: >
+    Describe the AI's purpose, allowed topics, and expected boundaries.
+    Be specific — this drives adversarial probe generation quality.
+
+api:
+  url: "https://api.openai.com"
+  method: POST
+  path: "/v1/chat/completions"
+
+request:
+  content_type: "application/json"
+  body:
+    model: "gpt-4"
+    messages:
+      - role: "user"
+        content: "{{PROMPT}}"
+
+response:
+  field: "choices.0.message.content"
+
+auth:
+  mode: "api_key"
+  api_key:
+    header: "Authorization"
+    prefix: "Bearer "
+    env_var: "TARGET_API_KEY"
+
+session:
+  header: ""
+  init_command: ""
+  cleanup_command: ""
+
+headers: {}

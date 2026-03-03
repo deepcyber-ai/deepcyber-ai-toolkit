@@ -1,0 +1,39 @@
+# Simple API with static API key — no session management
+#
+# Common pattern for hosted chatbot APIs behind an API gateway.
+#
+# Body: {"message": "..."}
+# Response: {"reply": "..."}
+
+target:
+  name: "CHANGEME"
+  description: >
+    Describe the AI's purpose, allowed topics, and expected boundaries.
+    Be specific — this drives adversarial probe generation quality.
+
+api:
+  url: "https://api.example.com"
+  method: POST
+  path: "/chat"
+
+request:
+  content_type: "application/json"
+  body:
+    message: "{{PROMPT}}"
+
+response:
+  field: "reply"
+
+auth:
+  mode: "api_key"
+  api_key:
+    header: "x-api-key"
+    prefix: ""
+    env_var: "TARGET_API_KEY"
+
+session:
+  header: ""
+  init_command: ""
+  cleanup_command: ""
+
+headers: {}

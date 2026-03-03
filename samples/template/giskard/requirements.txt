@@ -1,5 +1,0 @@
-giskard[llm]
-pandas
-requests
-python-dotenv
-pyyaml
