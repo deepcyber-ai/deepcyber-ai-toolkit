@@ -44,6 +44,11 @@ RUN useradd -m -s /bin/bash deepcyber
 # Shared Python deps for lib/redteam/shared/
 RUN pip install --no-cache-dir pyyaml python-dotenv requests
 
+# Fix namespace collision: adversarial-robustness-toolbox installs as "art"
+# which shadows the ASCII-art "art" package that PyRIT needs (text2art).
+# Reinstall the correct one last so PyRIT works.
+RUN pip install --no-cache-dir --force-reinstall "art>=6.0"
+
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
