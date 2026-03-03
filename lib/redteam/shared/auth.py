@@ -129,12 +129,12 @@ def _cognito_login(config):
         else:
             body[k] = v
 
-    print(f"Authenticating as {username}...")
+    print(f"Authenticating as {username}...", file=sys.stderr)
     resp = requests.post(endpoint, json=body, timeout=10)
     resp.raise_for_status()
     data = resp.json()
     token_field = cognito["token_response_field"]
-    print(f"Token acquired (expires in {data.get('expires_in', '?')}s)")
+    print(f"Token acquired (expires in {data.get('expires_in', '?')}s)", file=sys.stderr)
     return data
 
 

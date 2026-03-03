@@ -7,6 +7,7 @@ The attacker adapts its strategy based on the target's responses.
 
 Reads target API configuration from target.yaml.
 Requires an OpenAI API key for the attacker LLM (set OPENAI_API_KEY).
+Compatible with PyRIT 0.11.x.
 """
 
 import asyncio
@@ -18,10 +19,13 @@ import textwrap
 from shared.config import load_target_config, get_api_url, get_response_field
 from shared.auth import get_auth_headers
 
+from pyrit.memory import CentralMemory, SQLiteMemory
 from pyrit.prompt_target import HTTPTarget, OpenAIChatTarget
 from pyrit.prompt_target import get_http_target_json_response_callback_function
-from pyrit.orchestrator import RedTeamingOrchestrator
-from pyrit.common import default_values
+from pyrit.executor.attack.multi_turn.red_teaming import RedTeamingAttack
+
+# Initialize PyRIT memory (required in 0.11+)
+CentralMemory.set_memory_instance(SQLiteMemory())
 
 
 # Attack objective — edit this per engagement
@@ -104,19 +108,23 @@ async def main():
     # Attacker: OpenAI generates adversarial prompts
     attacker = OpenAIChatTarget()
 
-    orchestrator = RedTeamingOrchestrator(
+    attack = RedTeamingAttack(
         objective_target=target,
         adversarial_chat=attacker,
         max_turns=MAX_TURNS,
     )
 
-    result = await orchestrator.run_attack_async(objective=OBJECTIVE)
+    result = await attack.execute_async(objective=OBJECTIVE)
 
     print("\n" + "=" * 70)
     print("ATTACK RESULT")
     print("=" * 70)
-    print(f"Achieved objective: {result.achieved_objective}")
-    print(f"Turns used: {len(result.prompt_target_conversation_id)}")
+    print(f"Outcome:    {result.outcome.value}")
+    print(f"Turns used: {result.executed_turns}")
+    if result.last_response:
+        print(f"Last response: {result.last_response.converted_value[:300]}")
+    if result.outcome_reason:
+        print(f"Reason: {result.outcome_reason}")
 
     # Clean up session
     cleanup_cmd = config.get("session", {}).get("cleanup_command", "")

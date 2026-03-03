@@ -5,6 +5,7 @@ Sends a batch of adversarial prompts and prints the AI's responses.
 No attacker LLM needed — prompts are provided directly.
 
 Reads target API configuration from target.yaml.
+Compatible with PyRIT 0.11.x.
 """
 
 import asyncio
@@ -16,8 +17,12 @@ import textwrap
 from shared.config import load_target_config, get_api_url, get_response_field
 from shared.auth import get_auth_headers, get_token
 
+from pyrit.memory import CentralMemory, SQLiteMemory
 from pyrit.prompt_target import HTTPTarget, get_http_target_json_response_callback_function
-from pyrit.orchestrator import PromptSendingOrchestrator
+from pyrit.executor.attack.single_turn.prompt_sending import PromptSendingAttack
+
+# Initialize PyRIT memory (required in 0.11+)
+CentralMemory.set_memory_instance(SQLiteMemory())
 
 
 # Adversarial prompts to test
@@ -92,15 +97,26 @@ async def main():
         use_tls=use_tls,
     )
 
-    orchestrator = PromptSendingOrchestrator(objective_target=target)
-    responses = await orchestrator.send_prompts_async(prompt_list=TEST_PROMPTS)
+    attack = PromptSendingAttack(objective_target=target)
 
     print("=" * 70)
-    for i, resp in enumerate(responses):
-        print(f"\n[{i+1}] PROMPT: {TEST_PROMPTS[i]}")
-        print(f"    RESPONSE: {resp.request_pieces[0].converted_value[:200]}")
+    for i, prompt in enumerate(TEST_PROMPTS):
+        try:
+            result = await attack.execute_async(objective=prompt)
+            if result and result.last_response:
+                response_text = result.last_response.converted_value[:300]
+            else:
+                response_text = "[No response]"
+            outcome = result.outcome.value if result else "unknown"
+            print(f"\n[{i+1}] PROMPT: {prompt}")
+            print(f"    OUTCOME:  {outcome}")
+            print(f"    RESPONSE: {response_text}")
+        except Exception as e:
+            print(f"\n[{i+1}] PROMPT: {prompt}")
+            print(f"    ERROR: {e}")
+
     print("\n" + "=" * 70)
-    print(f"\nDone. {len(responses)} responses collected.")
+    print(f"\nDone. {len(TEST_PROMPTS)} prompts sent.")
 
     # Clean up session
     cleanup_cmd = config.get("session", {}).get("cleanup_command", "")
