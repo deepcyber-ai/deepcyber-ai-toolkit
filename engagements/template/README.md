@@ -154,4 +154,4 @@ pip install garak                            # for Garak
 
 ---
 
-Copyright Deep Cyber Ltd 2026
+(c) 2026 Deep Cyber Ltd. All rights reserved.

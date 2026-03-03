@@ -38,4 +38,4 @@ See [GUIDE.md](GUIDE.md) for the full walkthrough.
 
 ---
 
-Copyright Deep Cyber Ltd 2026
+(c) 2026 Deep Cyber Ltd. All rights reserved.
