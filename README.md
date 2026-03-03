@@ -256,6 +256,28 @@ docker run -it --rm \
   ./scripts/deepcyber-scan.sh
 ```
 
+## Engagements (Red Team Assessments)
+
+The `engagements/` directory provides a reusable template for running red team assessments against any conversational AI API. Copy the template, edit one config file, and all 6 tools work out of the box.
+
+```bash
+# Start a new engagement
+cp -r engagements/template engagements/acme-chatbot
+cd engagements/acme-chatbot
+vim target.yaml          # API URL, request/response format, auth mode
+cp .env.example .env     # credentials
+python shared/auth.py    # verify it works
+
+# Run tools
+cd humanbound && python redteam.py full   # HumanBound (single + multi-turn OWASP)
+cd promptfoo && bash setup.sh             # Promptfoo (17 plugins, 6 strategies)
+cd garak && bash run.sh                   # Garak (encoding, DAN, injection probes)
+cd pyrit && python single_turn.py         # PyRIT (custom adversarial prompts)
+cd giskard && python scan.py              # Giskard (HTML vulnerability report)
+```
+
+See [`engagements/GUIDE.md`](engagements/GUIDE.md) for the full step-by-step walkthrough, and [`engagements/examples/`](engagements/examples/) for common `target.yaml` patterns (API key, OpenAI-compatible, Cognito JWT).
+
 ## Configuration Files
 
 - `configs/promptfoo/promptfooconfig.yaml` — Promptfoo evaluation config (system prompt leakage, data exfiltration, indirect injection tests)
@@ -270,6 +292,23 @@ deepcyber-ai-toolkit/
 ├── Dockerfile
 ├── deepcyber.sh                          # Host-side launcher script
 ├── start.sh                              # Container entrypoint
+├── engagements/
+│   ├── GUIDE.md                          # Step-by-step engagement cheatsheet
+│   ├── README.md                         # Engagements overview
+│   ├── template/                         # Copy this for each new engagement
+│   │   ├── target.yaml                   # THE config file — edit this
+│   │   ├── .env.example                  # Credential template
+│   │   ├── shared/                       # Config loader + auth (don't edit)
+│   │   ├── humanbound/                   # HumanBound CLI integration
+│   │   ├── promptfoo/                    # Promptfoo red team
+│   │   ├── garak/                        # Garak probe scanner
+│   │   ├── pyrit/                        # PyRIT adversarial framework
+│   │   ├── giskard/                      # Giskard vulnerability scan
+│   │   └── deepcyber/                    # Container launcher
+│   └── examples/                         # Example target.yaml files
+│       ├── foodie-ai.yaml                # Cognito JWT auth
+│       ├── openai-compatible.yaml        # Bearer token, messages array
+│       └── api-key-simple.yaml           # Static API key, flat body
 ├── configs/
 │   ├── promptfoo/
 │   │   └── promptfooconfig.yaml
