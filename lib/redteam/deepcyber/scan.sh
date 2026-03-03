@@ -4,7 +4,7 @@ set -euo pipefail
 # Run all red teaming tools in sequence.
 # This script can run inside the DeepCyber container (via run.sh) or standalone.
 #
-# Expects ENGAGEMENT_DIR and DEEPCYBER_LIB to be set (by the dcr CLI).
+# Expects PROJECT_DIR and DEEPCYBER_LIB to be set (by the dcr CLI).
 # Falls back to legacy layout for backward compatibility.
 #
 # Usage:
@@ -19,17 +19,17 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TOOL="${1:-all}"
 
 # Resolve directories (dcr sets these; fall back to legacy layout)
-ENGAGEMENT_DIR="${ENGAGEMENT_DIR:-$(dirname "$SCRIPT_DIR")}"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
 DEEPCYBER_LIB="${DEEPCYBER_LIB:-$(dirname "$SCRIPT_DIR")}"
-export ENGAGEMENT_DIR DEEPCYBER_LIB
+export PROJECT_DIR DEEPCYBER_LIB
 
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-RESULTS_DIR="$ENGAGEMENT_DIR/results/$TIMESTAMP"
+RESULTS_DIR="$PROJECT_DIR/results/$TIMESTAMP"
 mkdir -p "$RESULTS_DIR"
 
-# Load .env from engagement dir
-if [ -f "$ENGAGEMENT_DIR/.env" ]; then
-  set -a; source "$ENGAGEMENT_DIR/.env"; set +a
+# Load .env from project dir
+if [ -f "$PROJECT_DIR/.env" ]; then
+  set -a; source "$PROJECT_DIR/.env"; set +a
 fi
 
 # Get a fresh token
@@ -37,7 +37,7 @@ echo "==> Authenticating..."
 TARGET_TOKEN=$(python3 -c '
 import sys, os
 sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
-os.environ.setdefault("ENGAGEMENT_DIR", os.environ.get("ENGAGEMENT_DIR", ""))
+os.environ.setdefault("PROJECT_DIR", os.environ.get("PROJECT_DIR", ""))
 from shared.config import load_target_config
 from shared.auth import get_token
 config = load_target_config()
@@ -66,7 +66,7 @@ run_garak() {
 
 run_pyrit() {
   echo "===== PyRIT (single-turn) ====="
-  cd "$ENGAGEMENT_DIR/pyrit"
+  cd "$PROJECT_DIR/pyrit"
   python3 single_turn.py 2>&1 | tee "$RESULTS_DIR/pyrit_single.log"
   echo ""
 }

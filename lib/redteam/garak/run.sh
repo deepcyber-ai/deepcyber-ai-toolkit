@@ -6,7 +6,7 @@ set -euo pipefail
 # Reads target.yaml to generate a Garak REST config (target_garak.json),
 # authenticates, and launches the scan.
 #
-# Expects ENGAGEMENT_DIR and DEEPCYBER_LIB to be set (by the dcr CLI).
+# Expects PROJECT_DIR and DEEPCYBER_LIB to be set (by the dcr CLI).
 # Falls back to REPO_ROOT for backward compatibility.
 #
 # Usage:
@@ -17,17 +17,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # Resolve directories (dcr sets these; fall back to legacy layout)
-ENGAGEMENT_DIR="${ENGAGEMENT_DIR:-$(dirname "$SCRIPT_DIR")}"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
 DEEPCYBER_LIB="${DEEPCYBER_LIB:-$(dirname "$SCRIPT_DIR")}"
-export ENGAGEMENT_DIR DEEPCYBER_LIB
+export PROJECT_DIR DEEPCYBER_LIB
 
-# Load .env from engagement dir
-if [ -f "$ENGAGEMENT_DIR/.env" ]; then
-  set -a; source "$ENGAGEMENT_DIR/.env"; set +a
+# Load .env from project dir
+if [ -f "$PROJECT_DIR/.env" ]; then
+  set -a; source "$PROJECT_DIR/.env"; set +a
 fi
 
-# Output directory inside engagement
-GARAK_DIR="$ENGAGEMENT_DIR/garak"
+# Output directory inside project
+GARAK_DIR="$PROJECT_DIR/garak"
 mkdir -p "$GARAK_DIR"
 
 # Generate target_garak.json from target.yaml and get a token
@@ -35,7 +35,7 @@ echo "==> Generating Garak config from target.yaml..."
 REST_API_KEY=$(python3 -c '
 import sys, os, json
 sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
-os.environ.setdefault("ENGAGEMENT_DIR", os.environ.get("ENGAGEMENT_DIR", ""))
+os.environ.setdefault("PROJECT_DIR", os.environ.get("PROJECT_DIR", ""))
 from shared.config import load_target_config, get_api_url, get_response_field, load_policy, build_policy_text
 from shared.auth import get_token
 
@@ -82,7 +82,7 @@ garak_config = {
     }
 }
 
-out_path = os.path.join(os.environ["ENGAGEMENT_DIR"], "garak", "target_garak.json")
+out_path = os.path.join(os.environ["PROJECT_DIR"], "garak", "target_garak.json")
 os.makedirs(os.path.dirname(out_path), exist_ok=True)
 with open(out_path, "w") as f:
     json.dump(garak_config, f, indent=2)
@@ -91,7 +91,7 @@ with open(out_path, "w") as f:
 policy = load_policy(config)
 if policy:
     policy_text = build_policy_text(policy)
-    policy_path = os.path.join(os.environ["ENGAGEMENT_DIR"], "garak", "policy_goal.txt")
+    policy_path = os.path.join(os.environ["PROJECT_DIR"], "garak", "policy_goal.txt")
     with open(policy_path, "w") as f:
         f.write(policy_text)
     import sys as _sys

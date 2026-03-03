@@ -1,6 +1,6 @@
 # DeepCyber Relay Proxy
 
-A reverse proxy for red team engagements where the target API is only accessible from inside the client network. The relay runs on the tester's laptop and bridges any cloud-based tool to the internal API via a secure tunnel.
+A reverse proxy for red team projects where the target API is only accessible from inside the client network. The relay runs on the tester's laptop and bridges any cloud-based tool to the internal API via a secure tunnel.
 
 ## Problem
 
@@ -122,7 +122,7 @@ In a separate terminal:
 cloudflared tunnel --url http://localhost:8443
 
 # Named tunnel (persistent URL, requires Cloudflare account)
-cloudflared tunnel run my-engagement
+cloudflared tunnel run my-project
 ```
 
 Copy the tunnel URL (e.g. `https://xxxx.trycloudflare.com`) and configure it as the target endpoint in your cloud tool.
@@ -156,7 +156,7 @@ These endpoints are served by the relay itself (not forwarded to the target):
 
 ### Hot-Swapping JWT Tokens
 
-If the internal API token expires mid-engagement:
+If the internal API token expires mid-project:
 
 ```bash
 curl -X POST \
@@ -181,7 +181,7 @@ Every request and response is logged to a JSONL file with tamper-evident SHA-256
 Logs are written to `~/results/relay_audit/` inside the container. Mount a volume to persist them:
 
 ```bash
-./deepcyber.sh --relay relay.env ~/engagement-output
+./deepcyber.sh --relay relay.env ~/project-output
 ```
 
 ### Verifying Log Integrity
@@ -236,9 +236,9 @@ This gives you a temporary `*.trycloudflare.com` URL. Good for testing, but the 
 
 ```bash
 cloudflared tunnel login
-cloudflared tunnel create my-engagement
-cloudflared tunnel route dns my-engagement relay.yourdomain.com
-cloudflared tunnel run my-engagement
+cloudflared tunnel create my-project
+cloudflared tunnel route dns my-project relay.yourdomain.com
+cloudflared tunnel run my-project
 ```
 
 This gives you a stable subdomain that persists across restarts.

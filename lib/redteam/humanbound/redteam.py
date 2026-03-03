@@ -25,15 +25,15 @@ import os
 import subprocess
 import sys
 
-from shared.config import load_target_config, get_api_url, get_request_body, get_engagement_dir, load_policy, build_policy_text
+from shared.config import load_target_config, get_api_url, get_request_body, get_project_dir, load_policy, build_policy_text
 from shared.auth import get_auth_headers
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────
 
 def _bot_config_path():
-    """Return the path to bot.json inside the engagement directory."""
-    path = os.path.join(get_engagement_dir(), "humanbound", "bot.json")
+    """Return the path to bot.json inside the project directory."""
+    path = os.path.join(get_project_dir(), "humanbound", "bot.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
@@ -147,7 +147,7 @@ def _write_policy_prompt(config):
     policy_text = build_policy_text(policy)
     if not policy_text:
         return None
-    prompt_path = os.path.join(get_engagement_dir(config), "humanbound", "policy_prompt.txt")
+    prompt_path = os.path.join(get_project_dir(config), "humanbound", "policy_prompt.txt")
     os.makedirs(os.path.dirname(prompt_path), exist_ok=True)
     with open(prompt_path, "w") as f:
         f.write(policy_text)

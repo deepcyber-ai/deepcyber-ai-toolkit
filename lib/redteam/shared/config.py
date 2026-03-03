@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Shared configuration loader for red team engagements.
+"""Shared configuration loader for red team projects.
 
-Reads target.yaml from the engagement root and provides a structured config
+Reads target.yaml from the project root and provides a structured config
 object that all tool integrations use.
 
 Usage:
@@ -22,7 +22,7 @@ def load_target_config():
     """Load and return the target configuration from target.yaml.
 
     Searches for target.yaml in (first match wins):
-      1. ENGAGEMENT_DIR env var (set by dcr CLI)
+      1. PROJECT_DIR env var (set by dcr CLI)
       2. REPO_ROOT env var (legacy)
       3. Parent of this file (legacy: code alongside config)
       4. Current working directory
@@ -35,8 +35,8 @@ def load_target_config():
         return _CONFIG_CACHE
 
     search_dirs = []
-    if os.environ.get("ENGAGEMENT_DIR"):
-        search_dirs.append(os.environ["ENGAGEMENT_DIR"])
+    if os.environ.get("PROJECT_DIR"):
+        search_dirs.append(os.environ["PROJECT_DIR"])
     if os.environ.get("REPO_ROOT"):
         search_dirs.append(os.environ["REPO_ROOT"])
     search_dirs.append(os.path.join(os.path.dirname(__file__), ".."))
@@ -53,7 +53,7 @@ def load_target_config():
     if config_path is None:
         sys.exit(
             "Error: target.yaml not found.\n"
-            "Set ENGAGEMENT_DIR or run from the engagement directory."
+            "Set PROJECT_DIR or run from the project directory."
         )
 
     # Load .env from same directory
@@ -65,16 +65,16 @@ def load_target_config():
     with open(config_path) as f:
         config = yaml.safe_load(f)
 
-    config["_engagement_dir"] = os.path.dirname(config_path)
+    config["_project_dir"] = os.path.dirname(config_path)
     _CONFIG_CACHE = config
     return config
 
 
-def get_engagement_dir(config=None):
-    """Return the absolute path to the engagement directory."""
+def get_project_dir(config=None):
+    """Return the absolute path to the project directory."""
     if config is None:
         config = load_target_config()
-    return config.get("_engagement_dir", os.getcwd())
+    return config.get("_project_dir", os.getcwd())
 
 
 def get_api_url(config=None):
@@ -137,7 +137,7 @@ def load_policy(config=None):
     if not policy:
         return None
 
-    eng_dir = get_engagement_dir(config)
+    eng_dir = get_project_dir(config)
     docs = []
     for doc in policy.get("documents", []):
         doc_path = os.path.join(eng_dir, doc["path"])

@@ -14,7 +14,7 @@ if [ "${DEEPCYBER_REGULATED}" = "true" ]; then
     echo "============================================"
     echo "  DeepCyber — REGULATED ENVIRONMENT MODE"
     echo "============================================"
-    echo "  Engagement:      ${ENGAGEMENT_ID:-UNSET}"
+    echo "  Project:      ${PROJECT_ID:-UNSET}"
     echo "  Tester:          ${TESTER_NAME:-unknown}"
     echo "  Client:          ${CLIENT_NAME:-unknown}"
     echo "  Classification:  ${CLASSIFICATION:-INTERNAL}"
@@ -38,7 +38,7 @@ if [ "${DEEPCYBER_REGULATED}" = "true" ]; then
     {
         echo "=== DeepCyber Audit Log ==="
         echo "Session started: ${TIMESTAMP}"
-        echo "Engagement: ${ENGAGEMENT_ID:-UNSET}"
+        echo "Project: ${PROJECT_ID:-UNSET}"
         echo "Tester: ${TESTER_NAME:-unknown}"
         echo "Client: ${CLIENT_NAME:-unknown}"
         echo "Classification: ${CLASSIFICATION:-INTERNAL}"

@@ -28,7 +28,7 @@ from pyrit.executor.attack.multi_turn.red_teaming import RedTeamingAttack
 CentralMemory.set_memory_instance(SQLiteMemory())
 
 
-# Attack objective — edit this per engagement, or leave as default.
+# Attack objective — edit this per project, or leave as default.
 # If a policy section exists in target.yaml, the objective is enriched
 # with forbidden topics and boundaries from the policy.
 OBJECTIVE = (

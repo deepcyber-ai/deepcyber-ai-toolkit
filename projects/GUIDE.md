@@ -1,4 +1,4 @@
-# DeepCyber Red Team Engagement Guide
+# DeepCyber Red Team Project Guide
 
 Step-by-step cheatsheet for running an OWASP-aligned red team assessment against any conversational AI API.
 
@@ -6,13 +6,13 @@ All tools are pre-installed in the DeepCyber container. Use `dcr` (DeepCyber Red
 
 ---
 
-## Phase 1: Create the Engagement (5 min)
+## Phase 1: Create the Project (5 min)
 
 ### Step 1 — Copy the template
 
 ```bash
-cp -r engagements/template engagements/acme-chatbot
-cd engagements/acme-chatbot
+cp -r projects/template projects/acme-chatbot
+cd projects/acme-chatbot
 ```
 
 ### Step 2 — Configure the target
@@ -31,7 +31,7 @@ Fill in these 5 fields:
 
 Then set the auth mode (`bearer_cognito`, `api_key`, `basic`, or `none`).
 
-See `engagements/examples/` for common patterns.
+See `projects/examples/` for common patterns.
 
 ### Step 2b — Define agent policies (optional)
 
@@ -41,7 +41,7 @@ Uncomment the `policy` section in `target.yaml` and fill in what the agent shoul
 - **`forbidden_topics`** — subjects it must avoid entirely
 - **`must_refuse`** — specific request types it must reject
 - **`expected_boundaries`** — behavioural rules it should follow
-- **`documents`** — paths to external policy files (relative to engagement dir)
+- **`documents`** — paths to external policy files (relative to project dir)
 
 If defined, each tool uses the policy to generate more targeted tests and evaluate responses against your rules.
 
@@ -261,7 +261,7 @@ dcr humanbound full
 dcr humanbound setup
 ```
 
-### Engagement checklist
+### Project checklist
 
 ```
 [ ] target.yaml configured

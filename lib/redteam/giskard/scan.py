@@ -24,7 +24,7 @@ from shared.config import (
     load_target_config,
     get_api_url,
     get_request_body,
-    get_engagement_dir,
+    get_project_dir,
     extract_response,
     load_policy,
     build_policy_text,
@@ -72,7 +72,7 @@ def main():
         nargs="+",
         help="Run only these detectors (e.g. prompt_injection information_disclosure)",
     )
-    default_output = os.path.join(get_engagement_dir(), "giskard_report.html")
+    default_output = os.path.join(get_project_dir(), "giskard_report.html")
     parser.add_argument(
         "--output",
         default=default_output,

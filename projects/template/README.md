@@ -1,15 +1,15 @@
-# Red Team Engagement Template
+# Red Team Project Template
 
 Lightweight config-only template for running OWASP-aligned red team assessments against any conversational AI API.
 
-Tool code lives in `lib/redteam/` and is invoked via the `dcr` CLI — you only copy config files per engagement.
+Tool code lives in `lib/redteam/` and is invoked via the `dcr` CLI — you only copy config files per project.
 
 ## Quick Start
 
 ```bash
-# 1. Copy and rename for your engagement
-cp -r engagements/template engagements/acme-chatbot
-cd engagements/acme-chatbot
+# 1. Copy and rename for your project
+cp -r projects/template projects/acme-chatbot
+cd projects/acme-chatbot
 
 # 2. Edit the ONE config file
 vim target.yaml    # API URL, payload shape, auth mode, response field
@@ -42,7 +42,7 @@ dcr humanbound full
 ## Directory Structure
 
 ```
-engagement-name/
+project-name/
 ├── target.yaml          # THE config file (edit this)
 ├── .env                 # Credentials (never commit)
 ├── .env.example         # Credential template
@@ -50,7 +50,7 @@ engagement-name/
 ├── API_REFERENCE.md     # Target API docs (optional)
 ├── policies/            # External policy documents (optional)
 │   └── acceptable-use.txt
-├── pyrit/               # Editable per engagement
+├── pyrit/               # Editable per project
 │   ├── single_turn.py   # Edit TEST_PROMPTS
 │   └── multi_turn.py    # Edit OBJECTIVE, MAX_TURNS
 ├── humanbound/          # Runtime-generated (gitignored)
@@ -135,7 +135,7 @@ policy:
       label: Acceptable Use Policy
 ```
 
-External documents are loaded at runtime from the engagement directory. See `policies/example-acceptable-use.txt` for a sample.
+External documents are loaded at runtime from the project directory. See `policies/example-acceptable-use.txt` for a sample.
 
 ## Tools
 

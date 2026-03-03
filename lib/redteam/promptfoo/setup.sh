@@ -6,7 +6,7 @@ set -euo pipefail
 # Reads target.yaml to export TARGET_* environment variables that the
 # promptfooconfig.yaml references via {{env.TARGET_*}} placeholders.
 #
-# Expects ENGAGEMENT_DIR and DEEPCYBER_LIB to be set (by the dcr CLI).
+# Expects PROJECT_DIR and DEEPCYBER_LIB to be set (by the dcr CLI).
 # Falls back to REPO_ROOT for backward compatibility.
 #
 # Usage:
@@ -18,17 +18,17 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ACTION="${1:-all}"
 
 # Resolve directories (dcr sets these; fall back to legacy layout)
-ENGAGEMENT_DIR="${ENGAGEMENT_DIR:-$(dirname "$SCRIPT_DIR")}"
+PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
 DEEPCYBER_LIB="${DEEPCYBER_LIB:-$(dirname "$SCRIPT_DIR")}"
-export ENGAGEMENT_DIR DEEPCYBER_LIB
+export PROJECT_DIR DEEPCYBER_LIB
 
-# Load .env from engagement dir
-if [ -f "$ENGAGEMENT_DIR/.env" ]; then
-  set -a; source "$ENGAGEMENT_DIR/.env"; set +a
+# Load .env from project dir
+if [ -f "$PROJECT_DIR/.env" ]; then
+  set -a; source "$PROJECT_DIR/.env"; set +a
 fi
 
-# Output directory inside engagement
-PF_DIR="$ENGAGEMENT_DIR/promptfoo"
+# Output directory inside project
+PF_DIR="$PROJECT_DIR/promptfoo"
 mkdir -p "$PF_DIR"
 
 # Export TARGET_* vars from target.yaml for promptfoo
@@ -36,7 +36,7 @@ echo "==> Reading target.yaml..."
 eval "$(python3 -c '
 import sys, os, json
 sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
-os.environ.setdefault("ENGAGEMENT_DIR", os.environ.get("ENGAGEMENT_DIR", ""))
+os.environ.setdefault("PROJECT_DIR", os.environ.get("PROJECT_DIR", ""))
 from shared.config import load_target_config, get_api_url, get_response_field
 from shared.auth import get_token
 
@@ -69,7 +69,7 @@ generate_config() {
   python3 -c '
 import sys, os, json, yaml
 sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
-os.environ.setdefault("ENGAGEMENT_DIR", os.environ.get("ENGAGEMENT_DIR", ""))
+os.environ.setdefault("PROJECT_DIR", os.environ.get("PROJECT_DIR", ""))
 from shared.config import load_target_config, get_api_url, get_response_field, load_policy, build_policy_text
 
 config = load_target_config()
@@ -164,7 +164,7 @@ if policy:
     for rule in policy.get("must_refuse", []):
         pf_config["redteam"]["plugins"].append({"id": "policy", "config": {"policy": f"The AI must refuse: {rule}"}})
 
-out_path = os.path.join(os.environ["ENGAGEMENT_DIR"], "promptfoo", "promptfooconfig.yaml")
+out_path = os.path.join(os.environ["PROJECT_DIR"], "promptfoo", "promptfooconfig.yaml")
 os.makedirs(os.path.dirname(out_path), exist_ok=True)
 with open(out_path, "w") as f:
     yaml.dump(pf_config, f, default_flow_style=False, sort_keys=False)

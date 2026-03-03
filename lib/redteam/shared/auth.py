@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pluggable authentication for red team engagements.
+"""Pluggable authentication for red team projects.
 
 Supports multiple auth modes configured in target.yaml:
   - bearer_cognito  username/password exchange for JWT

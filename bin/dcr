@@ -5,24 +5,24 @@ set -euo pipefail
 #
 # Single entry point for running all red teaming tools against a target API.
 # Auto-detects DEEPCYBER_LIB from its own location. Uses cwd or -d flag
-# for the engagement directory.
+# for the project directory.
 #
 # Usage:
-#   dcr auth                       # verify auth (from engagement dir)
+#   dcr auth                       # verify auth (from project dir)
 #   dcr humanbound full            # run humanbound full workflow
 #   dcr humanbound test --single   # run single-turn attacks
 #   dcr promptfoo                  # generate config + run
 #   dcr garak                      # default probes
 #   dcr garak -p dan               # DAN jailbreak probes
-#   dcr pyrit-single               # runs engagement's pyrit/single_turn.py
-#   dcr pyrit-multi                # runs engagement's pyrit/multi_turn.py
+#   dcr pyrit-single               # runs project's pyrit/single_turn.py
+#   dcr pyrit-multi                # runs project's pyrit/multi_turn.py
 #   dcr giskard                    # full vulnerability scan
 #   dcr scan                       # all tools in sequence
 #   dcr ai                         # launch AI coding assistant
 #   dcr ai setup                   # configure API keys
 #   dcr ai install                 # install global AI instructions
 #   dcr ai remove                  # remove AI instructions + keys
-#   dcr -d ~/engagements/acme humanbound full   # explicit engagement dir
+#   dcr -d ~/projects/acme humanbound full   # explicit project dir
 #
 # (c) 2026 Deep Cyber Ltd. All rights reserved.
 
@@ -41,12 +41,12 @@ BANNER='    ____                  ______      __
 BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
 export DEEPCYBER_LIB="${DEEPCYBER_LIB:-$(cd "$BIN_DIR/../lib/redteam" && pwd)}"
 
-# ── Parse -d flag for explicit engagement dir ────────────────────────
-ENGAGEMENT_DIR="${ENGAGEMENT_DIR:-}"
+# ── Parse -d flag for explicit project dir ────────────────────────
+PROJECT_DIR="${PROJECT_DIR:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -d|--dir)
-      ENGAGEMENT_DIR="$(cd "$2" && pwd)"
+      PROJECT_DIR="$(cd "$2" && pwd)"
       shift 2
       ;;
     -h|--help)
@@ -63,8 +63,8 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Default engagement dir to cwd
-export ENGAGEMENT_DIR="${ENGAGEMENT_DIR:-$(pwd)}"
+# Default project dir to cwd
+export PROJECT_DIR="${PROJECT_DIR:-$(pwd)}"
 
 # ── Help ─────────────────────────────────────────────────────────────
 show_help() {
@@ -74,7 +74,7 @@ show_help() {
 Usage: dcr [options] <command> [args...]
 
 Options:
-  -d, --dir DIR    Engagement directory (default: cwd)
+  -d, --dir DIR    Project directory (default: cwd)
   -v, --version    Show version
   -h, --help       Show this help
 
@@ -96,7 +96,7 @@ AI Assistant Commands:
   ai status        Show which CLIs and keys are configured
 
 Examples:
-  cd ~/engagements/acme-chatbot
+  cd ~/projects/acme-chatbot
   dcr auth
   dcr humanbound full
   dcr promptfoo
@@ -117,7 +117,7 @@ fi
 COMMAND="$1"
 shift
 
-# ── AI assistant commands (no engagement dir required) ───────────────
+# ── AI assistant commands (no project dir required) ───────────────
 REPO_ROOT="$(cd "$BIN_DIR/.." && pwd)"
 AI_INSTRUCTIONS="$REPO_ROOT/docs/AI_INSTRUCTIONS.md"
 AI_KEYS_FILE="$HOME/.deepcyber/ai-keys.env"
@@ -328,12 +328,12 @@ AI_HELP
         # Load saved API keys
         _load_ai_keys
 
-        # Show engagement context if in an engagement directory
-        if [ -f "$ENGAGEMENT_DIR/target.yaml" ]; then
+        # Show project context if in a project directory
+        if [ -f "$PROJECT_DIR/target.yaml" ]; then
           _context=$(python3 -c "
 import yaml
 try:
-    c = yaml.safe_load(open('$ENGAGEMENT_DIR/target.yaml'))
+    c = yaml.safe_load(open('$PROJECT_DIR/target.yaml'))
     name = c.get('target',{}).get('name','(unnamed)')
     url = c.get('api',{}).get('url','(not set)')
     auth = c.get('auth',{}).get('mode','(not set)')
@@ -341,11 +341,11 @@ try:
 except:
     print('(unknown)\n(unknown)\n(unknown)')
 " 2>/dev/null || echo "(unknown)\n(unknown)\n(unknown)")
-          _dir_name=$(basename "$ENGAGEMENT_DIR")
+          _dir_name=$(basename "$PROJECT_DIR")
           _name=$(echo "$_context" | sed -n '1p')
           _url=$(echo "$_context" | sed -n '2p')
           _auth=$(echo "$_context" | sed -n '3p')
-          echo " Engagement: $_dir_name"
+          echo " Project: $_dir_name"
           echo " Target:     $_name ($_url)"
           echo " Auth:       $_auth"
           echo ""
@@ -406,19 +406,19 @@ except:
     ;;
 esac
 
-# ── Scanning commands require engagement dir ─────────────────────────
-if [ ! -f "$ENGAGEMENT_DIR/target.yaml" ]; then
-  echo "Error: target.yaml not found in $ENGAGEMENT_DIR"
+# ── Scanning commands require project dir ─────────────────────────
+if [ ! -f "$PROJECT_DIR/target.yaml" ]; then
+  echo "Error: target.yaml not found in $PROJECT_DIR"
   echo ""
   echo "Either:"
-  echo "  1. cd into your engagement directory and run dcr"
-  echo "  2. Use: dcr -d /path/to/engagement <command>"
+  echo "  1. cd into your project directory and run dcr"
+  echo "  2. Use: dcr -d /path/to/project <command>"
   exit 1
 fi
 
-# ── Load .env from engagement dir ────────────────────────────────────
-if [ -f "$ENGAGEMENT_DIR/.env" ]; then
-  set -a; source "$ENGAGEMENT_DIR/.env"; set +a
+# ── Load .env from project dir ────────────────────────────────────
+if [ -f "$PROJECT_DIR/.env" ]; then
+  set -a; source "$PROJECT_DIR/.env"; set +a
 fi
 
 # ── Add DEEPCYBER_LIB to PYTHONPATH ─────────────────────────────────
@@ -443,22 +443,22 @@ case "$COMMAND" in
     ;;
 
   pyrit-single)
-    if [ ! -f "$ENGAGEMENT_DIR/pyrit/single_turn.py" ]; then
-      echo "Error: pyrit/single_turn.py not found in $ENGAGEMENT_DIR"
-      echo "Copy it from the engagement template."
+    if [ ! -f "$PROJECT_DIR/pyrit/single_turn.py" ]; then
+      echo "Error: pyrit/single_turn.py not found in $PROJECT_DIR"
+      echo "Copy it from the project template."
       exit 1
     fi
-    cd "$ENGAGEMENT_DIR/pyrit"
+    cd "$PROJECT_DIR/pyrit"
     python3 single_turn.py "$@"
     ;;
 
   pyrit-multi)
-    if [ ! -f "$ENGAGEMENT_DIR/pyrit/multi_turn.py" ]; then
-      echo "Error: pyrit/multi_turn.py not found in $ENGAGEMENT_DIR"
-      echo "Copy it from the engagement template."
+    if [ ! -f "$PROJECT_DIR/pyrit/multi_turn.py" ]; then
+      echo "Error: pyrit/multi_turn.py not found in $PROJECT_DIR"
+      echo "Copy it from the project template."
       exit 1
     fi
-    cd "$ENGAGEMENT_DIR/pyrit"
+    cd "$PROJECT_DIR/pyrit"
     python3 multi_turn.py "$@"
     ;;
 

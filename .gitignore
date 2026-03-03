@@ -37,5 +37,5 @@ design/*
 # Docker
 *.tar
 
-# Live engagements (contain credentials)
-engagements/foodie-ai/
+# Live projects (contain credentials)
+projects/foodie-ai/

@@ -28,7 +28,7 @@ Your expertise:
 - AI security evaluation and compliance testing
 
 Think like an attacker: probe boundaries, chain weaknesses, escalate findings. Always operate
-within the authorized engagement scope.
+within the authorized project scope.
 
 ---
 
@@ -125,7 +125,7 @@ All tools below are pre-installed in the DeepCyber container.
 ## 3. DCR CLI Reference
 
 `dcr` (DeepCyber Redteam) is the single entry point for all red teaming operations.
-Run from an engagement directory (one containing `target.yaml`).
+Run from an project directory (one containing `target.yaml`).
 
 ### Commands
 
@@ -163,7 +163,7 @@ dcr ai status                     Show which CLIs, keys, and instructions are co
 ### Global Options
 
 ```
-dcr -d DIR <command>              Use explicit engagement directory
+dcr -d DIR <command>              Use explicit project directory
 dcr -v / dcr --version            Show version
 dcr -h / dcr --help               Show help
 ```
@@ -172,7 +172,7 @@ dcr -h / dcr --help               Show help
 
 ## 4. target.yaml Schema
 
-The central configuration file. All tools read from it. Located in the engagement directory.
+The central configuration file. All tools read from it. Located in the project directory.
 
 ### Sections
 
@@ -262,7 +262,7 @@ policy:
     - "should not generate code"
     - "should stay in character as a support agent"
   documents:                                    # External policy files (loaded at runtime)
-    - path: policies/acceptable-use.txt         # Relative to engagement dir
+    - path: policies/acceptable-use.txt         # Relative to project dir
       label: Acceptable Use Policy
     - path: policies/brand-guidelines.md
       label: Brand Voice Guidelines
@@ -284,11 +284,11 @@ When analyzing scan results, read the `policy` section first. Use it to determin
 
 ---
 
-## 5. Engagement Methodology
+## 5. Project Methodology
 
 ### Phase 1: Setup (5 min)
-1. `cp -r engagements/template engagements/<name>`
-2. `cd engagements/<name>`
+1. `cp -r projects/template projects/<name>`
+2. `cd projects/<name>`
 3. Edit `target.yaml` — name, description, API URL, request body, response field, auth mode
 4. `cp .env.example .env` — set credentials
 5. `dcr auth` — verify authentication. Fix target.yaml/.env if it fails.
@@ -342,7 +342,7 @@ strict control over data flow, telemetry, and audit trails.
 ### Setup
 ```bash
 cp configs/regulated.env.example regulated.env
-# Edit: TARGET_API_BASE, credentials, model, engagement metadata
+# Edit: TARGET_API_BASE, credentials, model, project metadata
 ./deepcyber.sh --regulated regulated.env
 # With corporate CA:
 ./deepcyber.sh --regulated regulated.env --ca corp-ca.crt
@@ -351,7 +351,7 @@ cp configs/regulated.env.example regulated.env
 ### What it does
 - Routes all API traffic to `TARGET_API_BASE` (any provider: OpenAI, Anthropic, Azure, Bedrock, Google, Ollama, vLLM, custom)
 - Disables all telemetry: Promptfoo, DeepEval, Guardrails, HuggingFace Hub, PostHog, Scarf analytics
-- Enables audit logging to `~/results/audit.log` with engagement ID, tester, timestamp
+- Enables audit logging to `~/results/audit.log` with project ID, tester, timestamp
 - Supports corporate proxy (HTTP_PROXY, HTTPS_PROXY, NO_PROXY) and custom CA certificates
 
 ### Key config fields
@@ -364,7 +364,7 @@ cp configs/regulated.env.example regulated.env
 | GARAK_MODEL_TYPE / GARAK_MODEL_NAME | Garak model config |
 | HTTP_PROXY / HTTPS_PROXY / NO_PROXY | Corporate proxy |
 | CA_CERT_PATH | Path to corporate CA certificate |
-| ENGAGEMENT_ID / TESTER_NAME / CLIENT_NAME / CLASSIFICATION | Audit metadata |
+| PROJECT_ID / TESTER_NAME / CLIENT_NAME / CLASSIFICATION | Audit metadata |
 
 ### Connectivity test
 ```bash
@@ -375,7 +375,7 @@ cp configs/regulated.env.example regulated.env
 
 ## 7. Relay Proxy
 
-For engagements where the target API is only accessible from inside the client network (behind
+For projects where the target API is only accessible from inside the client network (behind
 a firewall, VPN-only, or IP-restricted).
 
 ### Architecture
@@ -430,7 +430,7 @@ python scripts/relay/verify_audit.py results/relay_audit/<logfile>.jsonl
 
 ### Cloudflare Tunnel options
 - **Quick tunnel (no account)**: `cloudflared tunnel --url http://localhost:8443` — ephemeral `*.trycloudflare.com` URL
-- **Named tunnel (persistent)**: `cloudflared tunnel create my-engagement` — stable subdomain, requires Cloudflare account
+- **Named tunnel (persistent)**: `cloudflared tunnel create my-project` — stable subdomain, requires Cloudflare account
 
 ### Running outside Docker
 ```bash
@@ -468,7 +468,7 @@ python scripts/relay/relay_proxy.py
 ### Key directories
 ```
 bin/dcr                    CLI entry point
-lib/redteam/               Tool code (shared across all engagements)
+lib/redteam/               Tool code (shared across all projects)
   shared/config.py         target.yaml loader
   shared/auth.py           Authentication orchestrator
   humanbound/redteam.py    HumanBound integration
@@ -476,8 +476,8 @@ lib/redteam/               Tool code (shared across all engagements)
   garak/run.sh             Garak orchestrator
   giskard/scan.py          Giskard vulnerability scanner
   deepcyber/scan.sh        All-tools orchestrator
-engagements/               One directory per engagement
-  template/                Copy this to start a new engagement
+projects/                  One directory per project
+  template/                Copy this to start a new project
 configs/                   Tool and environment configs
 scripts/                   Bundled scripts (selftest, scan, audit, relay)
 ```
@@ -493,16 +493,16 @@ scripts/                   Bundled scripts (selftest, scan, audit, relay)
 
 ## 9. Rules & Constraints
 
-1. **NEVER modify files in `lib/redteam/`** — installed library code shared across engagements.
+1. **NEVER modify files in `lib/redteam/`** — installed library code shared across projects.
 2. **NEVER commit or display `.env` contents** — they contain credentials.
 3. **Always run `dcr auth` before scanning** — if auth fails, fix `target.yaml` and `.env` first.
-4. **Always work from the engagement directory** — `dcr` requires `target.yaml` in the current directory.
+4. **Always work from the project directory** — `dcr` requires `target.yaml` in the current directory.
 5. **Do not install additional packages** unless the user explicitly asks.
 6. **Results are in `results/`** — read them, do not delete them.
 7. **PyRIT multi-turn requires `OPENAI_API_KEY`** in `.env`.
 8. **Tokens expire** — refresh with `dcr humanbound setup` or `/__relay/update-jwt`.
 9. **Read `target.yaml` (especially the `policy` section)** before analyzing results.
-10. **Authorized testing only** — stay within the engagement scope.
+10. **Authorized testing only** — stay within the project scope.
 
 ---
 

@@ -22,7 +22,7 @@ usage() {
     echo ""
     echo "Examples:"
     echo "  $(basename "$0")                                    # Mount current dir, interactive shell"
-    echo "  $(basename "$0") ~/projects/engagement              # Mount specific dir"
+    echo "  $(basename "$0") ~/projects/project              # Mount specific dir"
     echo "  $(basename "$0") -j                                 # Start JupyterLab on port 8888"
     echo "  $(basename "$0") -p -c corp-ca.crt                  # Corporate proxy with custom CA"
     echo "  $(basename "$0") -r regulated.env                   # Regulated environment mode"
@@ -83,7 +83,7 @@ fi
 
 WORKSPACE="$(cd "$WORKSPACE" && pwd)"
 
-DOCKER_ARGS=("-it" "--rm" "-v" "${WORKSPACE}:${CONTAINER_MOUNT}" "-e" "ENGAGEMENT_DIR=${CONTAINER_MOUNT}")
+DOCKER_ARGS=("-it" "--rm" "-v" "${WORKSPACE}:${CONTAINER_MOUNT}" "-e" "PROJECT_DIR=${CONTAINER_MOUNT}")
 
 # --- Regulated environment mode ---
 if [ -n "$REGULATED_ENV" ]; then

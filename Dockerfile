@@ -64,9 +64,9 @@ COPY bin/dcr /home/deepcyber/bin/dcr
 RUN chmod +x /home/deepcyber/bin/dcr
 COPY lib/redteam/ /home/deepcyber/lib/redteam/
 
-# Engagement template and examples
-COPY engagements/template/ /home/deepcyber/engagements/template/
-COPY engagements/examples/ /home/deepcyber/engagements/examples/
+# Project template and examples
+COPY projects/template/ /home/deepcyber/projects/template/
+COPY projects/examples/ /home/deepcyber/projects/examples/
 
 # AI assistant instructions (pre-installed for in-container use)
 COPY docs/AI_INSTRUCTIONS.md /home/deepcyber/docs/AI_INSTRUCTIONS.md

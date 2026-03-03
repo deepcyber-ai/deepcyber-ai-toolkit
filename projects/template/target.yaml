@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════
-# target.yaml — Red Team Engagement Configuration
+# target.yaml — Red Team Project Configuration
 # ═══════════════════════════════════════════════════════════════════════
 #
 # This is the ONLY file you need to edit to point all tools at a new
@@ -133,7 +133,7 @@ headers: {}
 #     - "should not generate code"
 #     - "should stay in character as a support agent"
 #   documents:                                    # External policy files (RAG-like)
-#     - path: policies/acceptable-use.txt         # Relative to engagement dir
+#     - path: policies/acceptable-use.txt         # Relative to project dir
 #       label: Acceptable Use Policy
 #     - path: policies/brand-guidelines.md
 #       label: Brand Voice Guidelines

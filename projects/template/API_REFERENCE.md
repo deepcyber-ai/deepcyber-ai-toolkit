@@ -1,6 +1,6 @@
 # API Reference — [TARGET NAME]
 
-> Fill this in for each engagement to document the target API.
+> Fill this in for each project to document the target API.
 
 ## Base URL
 
@@ -65,4 +65,4 @@ Authorization: Bearer <token>
 
 ## Notes
 
-<!-- Add engagement-specific notes here -->
+<!-- Add project-specific notes here -->

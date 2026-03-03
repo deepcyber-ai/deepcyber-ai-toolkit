@@ -63,7 +63,7 @@ Transition from a container toolkit to a full virtual machine appliance with Dee
 - [ ] Base OS: Kali Linux **minimal/netinstall** ARM64 — base system + XFCE only, no Kali tools (~2 GB vs ~8 GB full)
 - [ ] Default user: `deepcyber` (not `kali`) — `/home/deepcyber`
 - [ ] `setup.sh` script installs only our tools (pip/npm) and copies `lib/redteam/` + `bin/dcr` into PATH
-- [ ] Engagement template pre-loaded at `~/engagements/template/`
+- [ ] Project template pre-loaded at `~/projects/template/`
 - [ ] Export as `.utm` bundle (~3-4 GB) — user double-clicks to launch
 - [ ] Fallback: OVA/QCOW2 export for VMware, VirtualBox, Proxmox
 - [ ] Automated build pipeline (Packer + Ansible) for reproducible builds
@@ -80,7 +80,7 @@ Transition from a container toolkit to a full virtual machine appliance with Dee
 
 - [ ] Built-in documentation site (MkDocs or mdBook)
 - [ ] Tool-by-tool guides with worked examples
-- [ ] Engagement methodology walkthroughs
+- [ ] Project methodology walkthroughs
 - [ ] OWASP Top 10 for LLMs mapping to toolkit capabilities
 - [ ] NIST AI RMF alignment guide
 - [ ] Cheat sheets for common red team scenarios
@@ -95,13 +95,13 @@ Transition from a container toolkit to a full virtual machine appliance with Dee
 - [ ] Centralised results dashboard
 - [ ] AI red team assistant — CLI agent that helps with tool selection, config generation, scan orchestration, and result interpretation. Model-agnostic (local via Ollama, cloud API, or client-provided endpoint).
 
-### Engagement Workflow
+### Project Workflow
 
 - [ ] Project initialisation wizard (target model, scope, API keys)
 - [ ] Guided scan runner with progress tracking
 - [ ] Consolidated findings report across all tools
 - [ ] Evidence collection and screenshot capture
-- [ ] Export engagement bundle (findings + evidence + configs)
+- [ ] Export project bundle (findings + evidence + configs)
 
 ---
 
@@ -111,10 +111,10 @@ Evolve the VM into a multi-user platform with collaboration, CI/CD integration, 
 
 ### Multi-User and Collaboration
 
-- [ ] Web-based UI for managing engagements
+- [ ] Web-based UI for managing projects
 - [ ] Role-based access (lead, tester, reviewer, client)
 - [ ] Shared findings database with tagging and search
-- [ ] Real-time collaboration on engagement notes
+- [ ] Real-time collaboration on project notes
 - [ ] Audit trail for all actions
 
 ### CI/CD and Automation
