@@ -15,7 +15,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     rustc \
     && rm -rf /var/lib/apt/lists/*
 
-RUN npm install -g promptfoo
+RUN npm install -g promptfoo \
+    @anthropic-ai/claude-code \
+    @google/gemini-cli \
+    @openai/codex
 
 RUN pip install --no-cache-dir \
     garak==0.14.0 \
@@ -65,7 +68,19 @@ COPY lib/redteam/ /home/deepcyber/lib/redteam/
 COPY engagements/template/ /home/deepcyber/engagements/template/
 COPY engagements/examples/ /home/deepcyber/engagements/examples/
 
-RUN mkdir -p /home/deepcyber/results && \
+# AI assistant instructions (pre-installed for in-container use)
+COPY docs/AI_INSTRUCTIONS.md /home/deepcyber/docs/AI_INSTRUCTIONS.md
+
+RUN mkdir -p /home/deepcyber/results \
+             /home/deepcyber/.claude \
+             /home/deepcyber/.gemini \
+             /home/deepcyber/.codex && \
+    { echo "<!-- Pre-installed by DeepCyber container build -->"; echo ""; \
+      cat /home/deepcyber/docs/AI_INSTRUCTIONS.md; } > /home/deepcyber/.claude/CLAUDE.md && \
+    { echo "<!-- Pre-installed by DeepCyber container build -->"; echo ""; \
+      cat /home/deepcyber/docs/AI_INSTRUCTIONS.md; } > /home/deepcyber/.gemini/GEMINI.md && \
+    { echo "<!-- Pre-installed by DeepCyber container build -->"; echo ""; \
+      cat /home/deepcyber/docs/AI_INSTRUCTIONS.md; } > /home/deepcyber/.codex/AGENTS.md && \
     chown -R deepcyber:deepcyber /home/deepcyber
 
 # dcr environment

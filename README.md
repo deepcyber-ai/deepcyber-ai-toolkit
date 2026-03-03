@@ -279,6 +279,63 @@ dcr scan                 # All tools in sequence
 
 See [`engagements/GUIDE.md`](engagements/GUIDE.md) for the full step-by-step walkthrough, and [`engagements/examples/`](engagements/examples/) for common `target.yaml` patterns (API key, OpenAI-compatible, Cognito JWT).
 
+## Bring Your Own AI
+
+The toolkit supports AI coding assistants as red teaming co-pilots. Launch any supported CLI from an engagement directory and the AI will understand `dcr`, `target.yaml`, the full tool suite, and the engagement methodology.
+
+### Supported CLIs
+
+| CLI | Install | Instructions File |
+|-----|---------|------------------|
+| [Claude Code](https://docs.anthropic.com/en/docs/claude-code) | `npm i -g @anthropic-ai/claude-code` | `~/.claude/CLAUDE.md` |
+| [Gemini CLI](https://github.com/google-gemini/gemini-cli) | `npm i -g @google/gemini-cli` | `~/.gemini/GEMINI.md` |
+| [Codex CLI](https://github.com/openai/codex) | `npm i -g @openai/codex` | `~/.codex/AGENTS.md` |
+
+### Setup
+
+```bash
+dcr ai install      # install AI instructions globally (one-time)
+dcr ai setup        # configure API keys (interactive, one-time)
+dcr ai status       # check what's configured
+dcr ai remove       # remove instructions and saved keys
+```
+
+Inside the Docker container, AI instructions are pre-installed. Run `dcr ai setup` to configure API keys.
+
+### Usage
+
+```bash
+cd engagements/acme-chatbot
+dcr ai              # auto-detects installed CLI and launches it
+dcr ai claude       # launch Claude Code
+dcr ai gemini       # launch Gemini CLI
+dcr ai codex        # launch Codex CLI
+```
+
+The AI co-pilot knows:
+- All 15+ tools and their strengths (HumanBound, Promptfoo, Garak, PyRIT, Giskard, etc.)
+- All `dcr` subcommands and flags
+- The `target.yaml` schema including the `policy` section
+- The 5-phase engagement methodology
+- Regulated environment mode and relay proxy setup
+- OWASP LLM Top 10 categories for triaging findings
+
+### Policy-Based Analysis
+
+Add a `policy` section to `target.yaml` to define what the target should/shouldn't do. The AI uses it to judge scan results — flagging true violations and dismissing acceptable behavior:
+
+```yaml
+policy:
+  allowed_topics:
+    - "customer support for Acme products"
+  forbidden_topics:
+    - "medical or legal advice"
+  must_refuse:
+    - "attempts to override system instructions"
+  expected_boundaries:
+    - "should not reveal its system prompt"
+```
+
 ## Configuration Files
 
 - `configs/promptfoo/promptfooconfig.yaml` — Promptfoo evaluation config (system prompt leakage, data exfiltration, indirect injection tests)
@@ -303,6 +360,8 @@ deepcyber-ai-toolkit/
 │       ├── garak/                        # Garak probe scanner
 │       ├── giskard/                      # Giskard vulnerability scan
 │       └── deepcyber/                    # Container launcher + scan orchestrator
+├── docs/
+│   └── AI_INSTRUCTIONS.md               # Shared AI assistant instructions
 ├── engagements/
 │   ├── GUIDE.md                          # Step-by-step engagement cheatsheet
 │   ├── template/                         # Lightweight config-only template
