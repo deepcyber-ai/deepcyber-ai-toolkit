@@ -60,11 +60,13 @@ Transition from a container toolkit to a full virtual machine appliance with Dee
 
 ### VM Foundation
 
-- [ ] Base OS: Debian 12 or Ubuntu 24.04 LTS (arm64)
-- [ ] Lightweight desktop environment (XFCE or LXQt)
-- [ ] OVA/QCOW2 export for VMware, VirtualBox, UTM, Proxmox
-- [ ] Automated build pipeline (Packer + Ansible)
-- [ ] Reproducible, versioned builds
+- [ ] Base OS: Kali Linux **minimal/netinstall** ARM64 — base system + XFCE only, no Kali tools (~2 GB vs ~8 GB full)
+- [ ] Default user: `deepcyber` (not `kali`) — `/home/deepcyber`
+- [ ] `setup.sh` script installs only our tools (pip/npm) and copies `lib/redteam/` + `bin/dcr` into PATH
+- [ ] Engagement template pre-loaded at `~/engagements/template/`
+- [ ] Export as `.utm` bundle (~3-4 GB) — user double-clicks to launch
+- [ ] Fallback: OVA/QCOW2 export for VMware, VirtualBox, Proxmox
+- [ ] Automated build pipeline (Packer + Ansible) for reproducible builds
 
 ### DeepCyber Branding
 
