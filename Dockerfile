@@ -41,6 +41,9 @@ RUN pip install --no-cache-dir \
 
 RUN useradd -m -s /bin/bash deepcyber
 
+# Shared Python deps for lib/redteam/shared/
+RUN pip install --no-cache-dir pyyaml python-dotenv requests
+
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 
@@ -48,10 +51,22 @@ COPY configs/ /home/deepcyber/configs/
 COPY scripts/ /home/deepcyber/scripts/
 RUN chmod +x /home/deepcyber/scripts/*.sh
 
-COPY samples/ /home/deepcyber/samples/
+# dcr CLI and red teaming library
+COPY bin/dcr /home/deepcyber/bin/dcr
+RUN chmod +x /home/deepcyber/bin/dcr
+COPY lib/redteam/ /home/deepcyber/lib/redteam/
+
+# Engagement template and examples
+COPY engagements/template/ /home/deepcyber/engagements/template/
+COPY engagements/examples/ /home/deepcyber/engagements/examples/
 
 RUN mkdir -p /home/deepcyber/results && \
     chown -R deepcyber:deepcyber /home/deepcyber
+
+# dcr environment
+ENV DEEPCYBER_LIB=/home/deepcyber/lib/redteam
+ENV PATH="/home/deepcyber/bin:${PATH}"
+ENV PYTHONPATH="/home/deepcyber/lib/redteam"
 
 USER deepcyber
 WORKDIR /home/deepcyber

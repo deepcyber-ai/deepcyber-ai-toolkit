@@ -29,7 +29,7 @@ BIN_DIR="$(cd "$(dirname "$0")" && pwd)"
 export DEEPCYBER_LIB="${DEEPCYBER_LIB:-$(cd "$BIN_DIR/../lib/redteam" && pwd)}"
 
 # ── Parse -d flag for explicit engagement dir ────────────────────────
-ENGAGEMENT_DIR=""
+ENGAGEMENT_DIR="${ENGAGEMENT_DIR:-}"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     -d|--dir)

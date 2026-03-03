@@ -83,7 +83,7 @@ fi
 
 WORKSPACE="$(cd "$WORKSPACE" && pwd)"
 
-DOCKER_ARGS=("-it" "--rm" "-v" "${WORKSPACE}:${CONTAINER_MOUNT}")
+DOCKER_ARGS=("-it" "--rm" "-v" "${WORKSPACE}:${CONTAINER_MOUNT}" "-e" "ENGAGEMENT_DIR=${CONTAINER_MOUNT}")
 
 # --- Regulated environment mode ---
 if [ -n "$REGULATED_ENV" ]; then
