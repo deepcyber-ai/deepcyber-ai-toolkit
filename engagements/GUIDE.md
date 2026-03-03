@@ -286,3 +286,7 @@ cd humanbound && python redteam.py setup
 [ ] Guardrails exported
 [ ] Report drafted
 ```
+
+---
+
+Copyright Deep Cyber Ltd 2026

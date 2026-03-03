@@ -316,3 +316,7 @@ Ctrl-C stops both servers.
 ## Architecture Guide
 
 For a detailed visual guide with architecture diagrams and approach comparison, see `design/relay-proxy-guide.html`.
+
+---
+
+Copyright Deep Cyber Ltd 2026

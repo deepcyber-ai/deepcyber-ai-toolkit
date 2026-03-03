@@ -336,3 +336,7 @@ deepcyber-ai-toolkit/
 - **Platform:** `linux/arm64`
 - **Runtime user:** `deepcyber` (non-root)
 - **Entrypoint:** `/start.sh`
+
+---
+
+Copyright Deep Cyber Ltd 2026

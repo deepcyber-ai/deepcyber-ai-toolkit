@@ -35,3 +35,7 @@ python shared/auth.py   # verify it works
 ```
 
 See [GUIDE.md](GUIDE.md) for the full walkthrough.
+
+---
+
+Copyright Deep Cyber Ltd 2026

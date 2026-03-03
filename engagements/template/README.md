@@ -151,3 +151,7 @@ pip install -r giskard/requirements.txt      # for Giskard
 npm install -g promptfoo                     # for Promptfoo
 pip install garak                            # for Garak
 ```
+
+---
+
+Copyright Deep Cyber Ltd 2026
