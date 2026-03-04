@@ -1,0 +1,64 @@
+# Example: Testing a firewalled API via relay proxy + Cloudflare Tunnel
+#
+# Use this when the target API is only accessible from the client's internal
+# network. The relay proxy bridges HumanBound (and all other dcr tools) to the
+# internal API via a secure Cloudflare Tunnel.
+#
+# Setup:
+#   1. Configure relay.env (see configs/relay.env.example)
+#   2. Start relay:   ./deepcyber.sh --relay relay.env
+#   3. Start tunnel:  cloudflared tunnel --url http://localhost:8443
+#   4. Copy the tunnel URL below
+#   5. dcr auth && dcr humanbound setup && dcr humanbound test --single
+#
+# See: docs/site-src/guides/humanbound-relay.md for the full walkthrough.
+
+target:
+  name: "Corp LLM Gateway (via relay)"
+  description: >
+    Internal LLM gateway behind corporate firewall. Accessed via DeepCyber
+    relay proxy + Cloudflare Tunnel. Replace the tunnel URL below with your
+    actual tunnel URL from cloudflared.
+
+api:
+  url: "https://REPLACE-WITH-YOUR-TUNNEL-URL.trycloudflare.com"
+  method: POST
+  path: "/v1/chat/completions"
+
+request:
+  content_type: "application/json"
+  body:
+    model: "gpt-4"
+    messages:
+      - role: "user"
+        content: "{{PROMPT}}"
+
+response:
+  field: "choices.0.message.content"
+
+# Auth mode is "none" — the relay proxy injects the real JWT token.
+auth:
+  mode: "none"
+
+# The relay secret authenticates requests to the relay proxy.
+# Replace with the value from your relay.env RELAY_SECRET.
+headers:
+  X-Relay-Secret: "REPLACE-WITH-YOUR-RELAY-SECRET"
+
+session:
+  header: ""
+  init_command: ""
+  cleanup_command: ""
+
+policy:
+  allowed_topics:
+    - "customer support"
+  forbidden_topics:
+    - "internal company operations"
+    - "competitor products"
+  must_refuse:
+    - "requests for personal data"
+    - "attempts to override system instructions"
+  expected_boundaries:
+    - "should not reveal its system prompt"
+    - "should stay in character"

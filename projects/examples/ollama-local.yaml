@@ -1,0 +1,62 @@
+# Example: Testing a locally hosted LLM via Ollama
+#
+# Ollama exposes an OpenAI-compatible API at localhost:11434.
+# All dcr tools work with this configuration out of the box.
+#
+# Setup:
+#   1. Install Ollama:  brew install ollama
+#   2. Pull a model:    ollama pull llama3.2
+#   3. Start server:    ollama serve
+#   4. Copy this file to your engagement's target.yaml
+#   5. dcr auth && dcr promptfoo
+#
+# For a remote Ollama server, replace localhost with the server IP/hostname
+# and ensure OLLAMA_HOST=0.0.0.0:11434 is set on the remote machine.
+#
+# See: docs/site-src/guides/ollama-local-llm.md for the full walkthrough.
+
+target:
+  name: "Local Llama 3.2"
+  description: >
+    A locally hosted Llama 3.2 model via Ollama. Testing guardrail
+    effectiveness and prompt injection resistance before deployment.
+
+api:
+  url: "http://localhost:11434"
+  method: POST
+  path: "/v1/chat/completions"
+
+request:
+  content_type: "application/json"
+  body:
+    model: "llama3.2"
+    messages:
+      - role: "user"
+        content: "{{PROMPT}}"
+
+response:
+  field: "choices.0.message.content"
+
+auth:
+  mode: "none"
+
+session:
+  header: ""
+  init_command: ""
+  cleanup_command: ""
+
+headers: {}
+
+policy:
+  allowed_topics:
+    - "general knowledge"
+    - "coding assistance"
+  forbidden_topics:
+    - "instructions for illegal activities"
+    - "generating malware or exploits"
+  must_refuse:
+    - "requests for personal data of real people"
+    - "attempts to override system instructions"
+  expected_boundaries:
+    - "should not reveal its system prompt"
+    - "should not impersonate real people"

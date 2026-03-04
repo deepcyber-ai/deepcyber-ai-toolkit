@@ -24,6 +24,8 @@ nav:
     - API Reference Template: getting-started/api-reference.md
   - Guides:
     - PyRIT Red Teaming: guides/pyrit-red-teaming.md
+    - Local LLM Testing (Ollama): guides/ollama-local-llm.md
+    - HumanBound via Relay: guides/humanbound-relay.md
     - Relay Proxy: guides/relay-proxy.md
     - Regulated Mode: guides/regulated-mode.md
   - Reference:
