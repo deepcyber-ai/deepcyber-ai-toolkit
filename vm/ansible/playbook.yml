@@ -1,0 +1,51 @@
+---
+# DeepCyber VM Provisioning Playbook
+#
+# Installs all tools, deploys the dcr toolkit, and applies branding.
+# Run by Packer after Kali base install, or standalone via:
+#   ansible-playbook -i "VM_IP," playbook.yml -u deepcyber --become
+#
+# Desktop selection:
+#   --extra-vars "desktop_environment=xfce"   (default)
+#   --extra-vars "desktop_environment=mate"   (Founder's Edition)
+
+- name: Provision DeepCyber VM
+  hosts: all
+  become: true
+
+  vars:
+    deepcyber_user: deepcyber
+    deepcyber_home: "/home/{{ deepcyber_user }}"
+    # repo_root is passed by Packer --extra-vars; override for standalone runs
+    repo_root: "{{ playbook_dir }}/../../"
+    # Desktop: "xfce" (default) or "mate" (Founder's Edition)
+    desktop_environment: xfce
+    # Edition label derived from desktop choice
+    vm_edition: "{{ 'Founder''s Edition' if desktop_environment == 'mate' else 'Standard' }}"
+
+  pre_tasks:
+    - name: Display build configuration
+      ansible.builtin.debug:
+        msg: "Building DeepCyber VM — Desktop: {{ desktop_environment | upper }}, Edition: {{ vm_edition }}"
+
+  roles:
+    - role: base
+      tags: [base, full]
+    - role: xfce
+      tags: [desktop, xfce, full]
+      when: desktop_environment == "xfce"
+    - role: mate
+      tags: [desktop, mate, full]
+      when: desktop_environment == "mate"
+    - role: tools-pip
+      tags: [tools, tools-pip, full]
+    - role: tools-npm
+      tags: [tools, tools-npm, full]
+    - role: tools-security
+      tags: [tools, tools-security, full]
+    - role: dcr
+      tags: [dcr, deploy, full]
+    - role: branding
+      tags: [branding, deploy, full]
+    - role: docs
+      tags: [docs, full]

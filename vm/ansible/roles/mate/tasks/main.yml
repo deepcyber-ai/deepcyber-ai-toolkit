@@ -1,0 +1,41 @@
+---
+# MATE desktop environment (Founder's Edition) and display manager
+
+- name: Install MATE desktop
+  ansible.builtin.apt:
+    name:
+      - kali-desktop-mate
+    state: present
+    update_cache: true
+
+- name: Install LightDM display manager
+  ansible.builtin.apt:
+    name:
+      - lightdm
+      - lightdm-gtk-greeter
+      - lightdm-gtk-greeter-settings
+    state: present
+
+- name: Install MATE extras
+  ansible.builtin.apt:
+    name:
+      - mate-terminal
+      - caja
+      - pluma
+      - eom
+      - mate-screenshot
+      - mate-system-monitor
+      - mate-utils
+    state: present
+
+- name: Set LightDM as default display manager
+  ansible.builtin.debconf:
+    name: lightdm
+    question: shared/default-x-display-manager
+    vtype: select
+    value: lightdm
+
+- name: Set graphical target as default
+  ansible.builtin.command:
+    cmd: systemctl set-default graphical.target
+  changed_when: true

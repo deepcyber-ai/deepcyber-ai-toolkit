@@ -1,0 +1,101 @@
+---
+# DeepCyber Documentation Portal
+#
+# Installs MkDocs Material, copies doc sources from the repo,
+# builds the static site, and serves it via nginx at /docs.
+
+- name: Install MkDocs and Material theme
+  ansible.builtin.pip:
+    name:
+      - "mkdocs<2"
+      - mkdocs-material
+    extra_args: "--break-system-packages"
+
+- name: Create docs directory
+  ansible.builtin.file:
+    path: "{{ deepcyber_home }}/docs"
+    state: directory
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0755"
+
+- name: Copy mkdocs.yml
+  ansible.builtin.copy:
+    src: "{{ repo_root }}/docs/mkdocs.yml"
+    dest: "{{ deepcyber_home }}/docs/mkdocs.yml"
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0644"
+
+- name: Create site-src directories
+  ansible.builtin.file:
+    path: "{{ deepcyber_home }}/docs/site-src/{{ item }}"
+    state: directory
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0755"
+  loop:
+    - getting-started
+    - guides
+    - reference
+    - about
+
+- name: Copy docs site-src pages
+  ansible.builtin.copy:
+    src: "{{ repo_root }}/docs/site-src/"
+    dest: "{{ deepcyber_home }}/docs/site-src/"
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0644"
+    directory_mode: "0755"
+
+- name: Build MkDocs site
+  ansible.builtin.command:
+    cmd: mkdocs build
+    chdir: "{{ deepcyber_home }}/docs"
+  become_user: "{{ deepcyber_user }}"
+
+- name: Install nginx
+  ansible.builtin.apt:
+    name: nginx
+    state: present
+    update_cache: true
+
+- name: Configure nginx for docs site
+  ansible.builtin.copy:
+    content: |
+      server {
+          listen 80 default_server;
+          listen [::]:80 default_server;
+          server_name _;
+
+          # Redirect root to /docs/
+          location = / {
+              return 302 /docs/;
+          }
+
+          location /docs/ {
+              alias {{ deepcyber_home }}/docs/site/;
+              index index.html;
+              try_files $uri $uri/ =404;
+          }
+      }
+    dest: /etc/nginx/sites-available/deepcyber-docs
+    mode: "0644"
+
+- name: Disable default nginx site
+  ansible.builtin.file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Enable docs nginx site
+  ansible.builtin.file:
+    src: /etc/nginx/sites-available/deepcyber-docs
+    dest: /etc/nginx/sites-enabled/deepcyber-docs
+    state: link
+
+- name: Enable and start nginx
+  ansible.builtin.systemd:
+    name: nginx
+    enabled: true
+    state: restarted

@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=JupyterLab
+Comment=JupyterLab notebook environment
+Exec=xfce4-terminal -e "bash -c 'jupyter lab --no-browser --ip=0.0.0.0; exec bash'"
+Icon=text-x-python
+Terminal=false
+Type=Application
+Categories=DeepCyber;Development;

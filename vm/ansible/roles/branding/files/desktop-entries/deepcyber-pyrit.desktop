@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=PyRIT
+Comment=Microsoft Python Risk Identification Toolkit
+Exec=xfce4-terminal -e "bash -c 'echo \"Usage: dcr pyrit-single | dcr pyrit-multi\"; exec bash'"
+Icon=security-medium
+Terminal=false
+Type=Application
+Categories=DeepCyber;AIRedTeam;

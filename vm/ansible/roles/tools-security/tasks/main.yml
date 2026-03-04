@@ -1,0 +1,24 @@
+---
+# Traditional penetration testing tools from Kali repositories
+
+- name: Install security tools from Kali repos
+  ansible.builtin.apt:
+    name:
+      - burpsuite
+      - zaproxy
+      - medusa
+      - hydra
+      - john
+      - hashcat
+      - metasploit-framework
+    state: present
+    update_cache: true
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Initialise Metasploit database
+  ansible.builtin.command:
+    cmd: msfdb init
+    creates: /home/{{ deepcyber_user }}/.msf4/db
+  become: true
+  become_user: "{{ deepcyber_user }}"

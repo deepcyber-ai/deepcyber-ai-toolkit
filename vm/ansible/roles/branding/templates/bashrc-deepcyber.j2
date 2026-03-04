@@ -1,0 +1,26 @@
+# ~/.bashrc — DeepCyber VM branded shell configuration
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+    . /etc/bashrc
+fi
+
+# DeepCyber branded prompt: red username, cyan hostname, blue path
+export PS1='\[\e[1;31m\]deepcyber\[\e[0m\]@\[\e[1;36m\]\h\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ '
+
+# DeepCyber environment (also in /etc/profile.d/deepcyber.sh)
+export DEEPCYBER_LIB={{ deepcyber_home }}/lib/redteam
+export PATH="{{ deepcyber_home }}/bin:$PATH"
+export PYTHONPATH="{{ deepcyber_home }}/lib/redteam${PYTHONPATH:+:$PYTHONPATH}"
+
+# History
+export HISTSIZE=10000
+export HISTFILESIZE=20000
+export HISTCONTROL=ignoredups:erasedups
+
+# Aliases
+alias ll='ls -alF --color=auto'
+alias la='ls -A --color=auto'
+alias l='ls -CF --color=auto'
+alias projects='cd ~/projects'
+alias results='cd ~/results'

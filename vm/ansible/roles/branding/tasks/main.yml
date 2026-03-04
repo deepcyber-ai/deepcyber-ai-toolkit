@@ -1,0 +1,276 @@
+---
+# DeepCyber VM branding: wallpapers, MOTD, PS1, Plymouth, LightDM, app menu
+
+# ---- Wallpapers ----
+
+- name: Create wallpaper directory
+  ansible.builtin.file:
+    path: /usr/share/backgrounds/deepcyber
+    state: directory
+    mode: "0755"
+
+- name: Bundle all DeepCyber wallpapers
+  ansible.builtin.synchronize:
+    src: "{{ repo_root }}/images/wallpapers/"
+    dest: /usr/share/backgrounds/deepcyber/
+    recursive: true
+
+- name: Set wallpaper permissions
+  ansible.builtin.file:
+    path: /usr/share/backgrounds/deepcyber
+    state: directory
+    mode: "0755"
+    recurse: true
+
+# ---- MOTD ----
+
+- name: Deploy MOTD banner
+  ansible.builtin.template:
+    src: motd.j2
+    dest: /etc/motd
+    mode: "0644"
+
+# Disable dynamic MOTD scripts that would override ours
+- name: Disable dynamic MOTD
+  ansible.builtin.file:
+    path: /etc/update-motd.d
+    state: directory
+    mode: "0644"
+    recurse: true
+
+# ---- Shell Configuration ----
+
+- name: Deploy branded .bashrc
+  ansible.builtin.template:
+    src: bashrc-deepcyber.j2
+    dest: "{{ deepcyber_home }}/.bashrc"
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0644"
+
+# ---- Plymouth Boot Splash ----
+
+- name: Create Plymouth theme directory
+  ansible.builtin.file:
+    path: /usr/share/plymouth/themes/deepcyber
+    state: directory
+    mode: "0755"
+
+- name: Deploy Plymouth theme metadata
+  ansible.builtin.template:
+    src: plymouth/deepcyber.plymouth.j2
+    dest: /usr/share/plymouth/themes/deepcyber/deepcyber.plymouth
+    mode: "0644"
+
+- name: Deploy Plymouth theme script
+  ansible.builtin.template:
+    src: plymouth/deepcyber.script.j2
+    dest: /usr/share/plymouth/themes/deepcyber/deepcyber.script
+    mode: "0644"
+
+- name: Deploy Plymouth logo
+  ansible.builtin.copy:
+    src: deepcyber-logo.png
+    dest: /usr/share/plymouth/themes/deepcyber/deepcyber-logo.png
+    mode: "0644"
+  when: lookup('fileglob', role_path + '/files/deepcyber-logo.png') | length > 0
+
+- name: Set DeepCyber as default Plymouth theme
+  ansible.builtin.command:
+    cmd: plymouth-set-default-theme deepcyber
+  changed_when: true
+  failed_when: false
+
+- name: Update initramfs for Plymouth theme
+  ansible.builtin.command:
+    cmd: update-initramfs -u
+  changed_when: true
+  failed_when: false
+
+# ---- LightDM Login Screen ----
+
+- name: Deploy LightDM greeter configuration
+  ansible.builtin.template:
+    src: lightdm-gtk-greeter.conf.j2
+    dest: /etc/lightdm/lightdm-gtk-greeter.conf
+    mode: "0644"
+
+- name: Deploy logo for LightDM
+  ansible.builtin.copy:
+    src: deepcyber-logo.png
+    dest: /usr/share/pixmaps/deepcyber-logo.png
+    mode: "0644"
+  when: lookup('fileglob', role_path + '/files/deepcyber-logo.png') | length > 0
+
+# ---- Desktop Wallpaper Configuration ----
+
+# XFCE wallpaper (XML config)
+- name: Create XFCE config directory
+  ansible.builtin.file:
+    path: "{{ deepcyber_home }}/.config/xfce4/xfconf/xfce-perchannel-xml"
+    state: directory
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0755"
+  when: desktop_environment == "xfce"
+
+- name: Configure XFCE desktop wallpaper
+  ansible.builtin.copy:
+    content: |
+      <?xml version="1.0" encoding="UTF-8"?>
+      <channel name="xfce4-desktop" version="1.0">
+        <property name="backdrop" type="empty">
+          <property name="screen0" type="empty">
+            <property name="monitorVirtual-1" type="empty">
+              <property name="workspace0" type="empty">
+                <property name="last-image" type="string"
+                  value="/usr/share/backgrounds/deepcyber/Deep Cyner AI Red Teaming 1.jpg"/>
+                <property name="image-style" type="int" value="5"/>
+              </property>
+            </property>
+          </property>
+        </property>
+      </channel>
+    dest: "{{ deepcyber_home }}/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml"
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0644"
+  when: desktop_environment == "xfce"
+
+# MATE wallpaper (dconf/gsettings)
+- name: Create MATE dconf profile directory
+  ansible.builtin.file:
+    path: /etc/dconf/db/local.d
+    state: directory
+    mode: "0755"
+  when: desktop_environment == "mate"
+
+- name: Configure MATE desktop wallpaper via dconf
+  ansible.builtin.copy:
+    content: |
+      [org/mate/desktop/background]
+      picture-filename='/usr/share/backgrounds/deepcyber/Deep Cyner AI Red Teaming 1.jpg'
+      picture-options='zoom'
+
+      [org/mate/marco/general]
+      theme='Kali-Dark'
+
+      [org/mate/desktop/interface]
+      gtk-theme='Kali-Dark'
+      icon-theme='Flat-Remix-Blue-Dark'
+    dest: /etc/dconf/db/local.d/01-deepcyber
+    mode: "0644"
+  when: desktop_environment == "mate"
+
+- name: Create MATE dconf profile
+  ansible.builtin.copy:
+    content: |
+      user-db:user
+      system-db:local
+    dest: /etc/dconf/profile/user
+    mode: "0644"
+  when: desktop_environment == "mate"
+
+- name: Update MATE dconf database
+  ansible.builtin.command:
+    cmd: dconf update
+  changed_when: true
+  failed_when: false
+  when: desktop_environment == "mate"
+
+# ---- Application Menu (.desktop entries) ----
+
+- name: Deploy DeepCyber .desktop files
+  ansible.builtin.copy:
+    src: "desktop-entries/"
+    dest: /usr/share/applications/
+    mode: "0644"
+
+# ---- XFCE Application Menu Categories ----
+
+- name: Create menu directory
+  ansible.builtin.file:
+    path: /etc/xdg/menus/applications-merged
+    state: directory
+    mode: "0755"
+
+- name: Deploy DeepCyber menu category
+  ansible.builtin.copy:
+    content: |
+      <!DOCTYPE Menu PUBLIC "-//freedesktop//DTD Menu 1.0//EN"
+        "http://www.freedesktop.org/standards/menu-spec/menu-1.0.dtd">
+      <Menu>
+        <Name>Applications</Name>
+        <Menu>
+          <Name>DeepCyber</Name>
+          <Directory>deepcyber.directory</Directory>
+          <Include>
+            <Category>DeepCyber</Category>
+          </Include>
+          <Menu>
+            <Name>AI Red Teaming</Name>
+            <Directory>deepcyber-redteam.directory</Directory>
+            <Include>
+              <Category>AIRedTeam</Category>
+            </Include>
+          </Menu>
+          <Menu>
+            <Name>Evaluation</Name>
+            <Directory>deepcyber-evaluation.directory</Directory>
+            <Include>
+              <Category>Evaluation</Category>
+            </Include>
+          </Menu>
+        </Menu>
+      </Menu>
+    dest: /etc/xdg/menus/applications-merged/deepcyber.menu
+    mode: "0644"
+
+- name: Create directory entries directory
+  ansible.builtin.file:
+    path: /usr/share/desktop-directories
+    state: directory
+    mode: "0755"
+
+- name: Deploy DeepCyber menu directory entry
+  ansible.builtin.copy:
+    content: |
+      [Desktop Entry]
+      Name=DeepCyber
+      Comment=AI Red Team Toolkit
+      Icon=security-high
+      Type=Directory
+    dest: /usr/share/desktop-directories/deepcyber.directory
+    mode: "0644"
+
+- name: Deploy AI Red Teaming submenu directory entry
+  ansible.builtin.copy:
+    content: |
+      [Desktop Entry]
+      Name=AI Red Teaming
+      Comment=Adversarial testing and attack simulation tools
+      Icon=security-medium
+      Type=Directory
+    dest: /usr/share/desktop-directories/deepcyber-redteam.directory
+    mode: "0644"
+
+- name: Deploy Evaluation submenu directory entry
+  ansible.builtin.copy:
+    content: |
+      [Desktop Entry]
+      Name=Evaluation
+      Comment=AI quality and vulnerability evaluation tools
+      Icon=dialog-information
+      Type=Directory
+    dest: /usr/share/desktop-directories/deepcyber-evaluation.directory
+    mode: "0644"
+
+# ---- Fix ownership ----
+
+- name: Fix ownership of desktop config
+  ansible.builtin.file:
+    path: "{{ deepcyber_home }}/.config"
+    state: directory
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    recurse: true

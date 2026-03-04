@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=AI Red Team Assistant
+Comment=Launch AI coding assistant (dcr ai)
+Exec=xfce4-terminal -e "bash -c 'dcr ai; exec bash'"
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=DeepCyber;

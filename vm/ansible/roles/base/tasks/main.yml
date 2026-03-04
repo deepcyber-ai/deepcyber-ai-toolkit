@@ -1,0 +1,66 @@
+---
+# Base system configuration: user, locale, timezone, sudoers, core packages
+
+- name: Set hostname
+  ansible.builtin.hostname:
+    name: deepcyber
+
+- name: Ensure deepcyber user exists
+  ansible.builtin.user:
+    name: "{{ deepcyber_user }}"
+    shell: /bin/bash
+    groups: sudo,adm
+    append: true
+    create_home: true
+
+- name: Install passwordless sudo for deepcyber
+  ansible.builtin.copy:
+    src: sudoers-deepcyber
+    dest: /etc/sudoers.d/deepcyber
+    mode: "0440"
+    validate: "visudo -cf %s"
+
+- name: Set locale to en_US.UTF-8
+  ansible.builtin.locale_gen:
+    name: en_US.UTF-8
+    state: present
+
+- name: Set default locale
+  ansible.builtin.copy:
+    content: |
+      LANG=en_US.UTF-8
+      LC_ALL=en_US.UTF-8
+    dest: /etc/default/locale
+    mode: "0644"
+
+- name: Set timezone to UTC
+  community.general.timezone:
+    name: UTC
+
+- name: Update apt cache and upgrade packages
+  ansible.builtin.apt:
+    update_cache: true
+    upgrade: dist
+    cache_valid_time: 3600
+
+- name: Install base development packages
+  ansible.builtin.apt:
+    name:
+      - build-essential
+      - git
+      - curl
+      - wget
+      - jq
+      - unzip
+      - cargo
+      - rustc
+      - ca-certificates
+      - gnupg
+      - software-properties-common
+      - python3
+      - python3-pip
+      - python3-venv
+      - python3-dev
+      - libffi-dev
+      - libssl-dev
+    state: present

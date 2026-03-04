@@ -1,0 +1,35 @@
+---
+# Python tool installation — mirrors the Dockerfile install order exactly.
+# Order matters for dependency resolution (especially scipy, giskard, art).
+
+- name: Install core red teaming and ML security tools
+  ansible.builtin.pip:
+    requirements: "{{ role_path }}/files/requirements-core.txt"
+    extra_args: "--no-cache-dir --break-system-packages"
+  environment:
+    DEBIAN_FRONTEND: noninteractive
+
+- name: Install scipy and giskard (order-sensitive)
+  ansible.builtin.pip:
+    name:
+      - "scipy<1.14"
+      - "giskard[llm]==2.19.1"
+    extra_args: "--no-cache-dir --break-system-packages"
+
+- name: Install guardrails and evaluation tools
+  ansible.builtin.pip:
+    requirements: "{{ role_path }}/files/requirements-guardrails.txt"
+    extra_args: "--no-cache-dir --break-system-packages"
+
+- name: Install shared Python dependencies
+  ansible.builtin.pip:
+    requirements: "{{ role_path }}/files/requirements-shared.txt"
+    extra_args: "--no-cache-dir --break-system-packages"
+
+# Fix namespace collision: adversarial-robustness-toolbox installs as "art"
+# which shadows the ASCII-art "art" package that PyRIT needs (text2art).
+# Reinstall the correct one last so PyRIT works.
+- name: Fix ART namespace collision (reinstall art>=6.0 last)
+  ansible.builtin.pip:
+    name: "art>=6.0"
+    extra_args: "--no-cache-dir --force-reinstall --break-system-packages"

@@ -1,0 +1,144 @@
+---
+# Deploy the DeepCyber toolkit — replicates the Docker container layout
+# at /home/deepcyber/ using native filesystem copies.
+
+- name: Create toolkit directory structure
+  ansible.builtin.file:
+    path: "{{ deepcyber_home }}/{{ item }}"
+    state: directory
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0755"
+  loop:
+    - bin
+    - lib/redteam
+    - configs
+    - scripts
+    - projects/template
+    - projects/examples
+    - docs
+    - results
+    - .claude
+    - .gemini
+    - .codex
+    - .deepcyber
+
+# ---- Copy toolkit files from repo ----
+
+- name: Deploy dcr CLI
+  ansible.builtin.copy:
+    src: "{{ repo_root }}/bin/dcr"
+    dest: "{{ deepcyber_home }}/bin/dcr"
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0755"
+
+- name: Deploy lib/redteam/ library
+  ansible.builtin.synchronize:
+    src: "{{ repo_root }}/lib/redteam/"
+    dest: "{{ deepcyber_home }}/lib/redteam/"
+    recursive: true
+    delete: true
+
+- name: Deploy configs/
+  ansible.builtin.synchronize:
+    src: "{{ repo_root }}/configs/"
+    dest: "{{ deepcyber_home }}/configs/"
+    recursive: true
+    delete: true
+
+- name: Deploy scripts/
+  ansible.builtin.synchronize:
+    src: "{{ repo_root }}/scripts/"
+    dest: "{{ deepcyber_home }}/scripts/"
+    recursive: true
+    delete: true
+
+- name: Make scripts executable
+  ansible.builtin.shell:
+    cmd: chmod +x {{ deepcyber_home }}/scripts/*.sh {{ deepcyber_home }}/scripts/**/*.sh 2>/dev/null || true
+  changed_when: true
+
+- name: Deploy projects/template/
+  ansible.builtin.synchronize:
+    src: "{{ repo_root }}/projects/template/"
+    dest: "{{ deepcyber_home }}/projects/template/"
+    recursive: true
+    delete: true
+
+- name: Deploy projects/examples/
+  ansible.builtin.synchronize:
+    src: "{{ repo_root }}/projects/examples/"
+    dest: "{{ deepcyber_home }}/projects/examples/"
+    recursive: true
+    delete: true
+
+- name: Deploy AI instructions source
+  ansible.builtin.copy:
+    src: "{{ repo_root }}/docs/AI_INSTRUCTIONS.md"
+    dest: "{{ deepcyber_home }}/docs/AI_INSTRUCTIONS.md"
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0644"
+
+# ---- Environment variables ----
+
+- name: Install DeepCyber environment profile
+  ansible.builtin.copy:
+    content: |
+      # DeepCyber AI Red Team Toolkit environment
+      export DEEPCYBER_LIB={{ deepcyber_home }}/lib/redteam
+      export PATH="{{ deepcyber_home }}/bin:$PATH"
+      export PYTHONPATH="{{ deepcyber_home }}/lib/redteam${PYTHONPATH:+:$PYTHONPATH}"
+    dest: /etc/profile.d/deepcyber.sh
+    mode: "0644"
+
+# ---- Pre-install AI assistant instructions ----
+
+- name: Read AI instructions source
+  ansible.builtin.slurp:
+    src: "{{ deepcyber_home }}/docs/AI_INSTRUCTIONS.md"
+  register: ai_instructions
+
+- name: Pre-install Claude Code instructions
+  ansible.builtin.copy:
+    content: |
+      <!-- Pre-installed by DeepCyber VM build -->
+
+      {{ ai_instructions.content | b64decode }}
+    dest: "{{ deepcyber_home }}/.claude/CLAUDE.md"
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0644"
+
+- name: Pre-install Gemini CLI instructions
+  ansible.builtin.copy:
+    content: |
+      <!-- Pre-installed by DeepCyber VM build -->
+
+      {{ ai_instructions.content | b64decode }}
+    dest: "{{ deepcyber_home }}/.gemini/GEMINI.md"
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0644"
+
+- name: Pre-install Codex CLI instructions
+  ansible.builtin.copy:
+    content: |
+      <!-- Pre-installed by DeepCyber VM build -->
+
+      {{ ai_instructions.content | b64decode }}
+    dest: "{{ deepcyber_home }}/.codex/AGENTS.md"
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    mode: "0644"
+
+# ---- Fix ownership ----
+
+- name: Set ownership of deepcyber home directory
+  ansible.builtin.file:
+    path: "{{ deepcyber_home }}"
+    state: directory
+    owner: "{{ deepcyber_user }}"
+    group: "{{ deepcyber_user }}"
+    recurse: true

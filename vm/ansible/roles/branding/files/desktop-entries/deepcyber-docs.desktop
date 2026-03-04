@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=DeepCyber Docs
+Comment=Open the DeepCyber documentation portal
+Exec=xdg-open http://localhost/docs
+Icon=accessories-dictionary
+Terminal=false
+Type=Application
+Categories=DeepCyber;Documentation;

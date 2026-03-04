@@ -1,0 +1,4 @@
+# Shared dependencies for lib/redteam/shared/
+pyyaml
+python-dotenv
+requests
