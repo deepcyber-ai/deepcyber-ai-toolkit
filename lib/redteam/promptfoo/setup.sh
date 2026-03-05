@@ -10,12 +10,34 @@ set -euo pipefail
 # Falls back to REPO_ROOT for backward compatibility.
 #
 # Usage:
-#   bash setup.sh                        # generate config + run
+#   bash setup.sh                        # generate config + run redteam
 #   bash setup.sh generate               # generate promptfooconfig.yaml only
 #   bash setup.sh run                    # run only (assumes config exists)
+#   bash setup.sh -c myconfig.yaml       # run custom config (auto-detect eval/redteam)
+#   bash setup.sh eval -c baseline.yaml  # run custom config in eval mode
+#   bash setup.sh redteam -c attack.yaml # run custom config in redteam mode
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ACTION="${1:-all}"
+
+# Parse flags
+CUSTOM_CONFIG=""
+ACTION=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -c|--config)
+      CUSTOM_CONFIG="$2"
+      shift 2
+      ;;
+    generate|run|eval|redteam|all)
+      ACTION="$1"
+      shift
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+ACTION="${ACTION:-all}"
 
 # Resolve directories (dcr sets these; fall back to legacy layout)
 PROJECT_DIR="${PROJECT_DIR:-$(dirname "$SCRIPT_DIR")}"
@@ -178,11 +200,55 @@ run_scan() {
   npx promptfoo@latest redteam run
 }
 
-case "$ACTION" in
-  generate) generate_config ;;
-  run)      run_scan ;;
-  all|*)    generate_config && run_scan ;;
-esac
+run_custom() {
+  local config_file="$1"
+  local mode="$2"  # eval, redteam, or auto
+
+  # Resolve config path relative to promptfoo/ dir
+  if [[ ! "$config_file" = /* ]]; then
+    config_file="$PF_DIR/$config_file"
+  fi
+
+  if [ ! -f "$config_file" ]; then
+    echo "Error: config file not found: $config_file"
+    exit 1
+  fi
+
+  # Auto-detect mode by checking for 'redteam:' key in the yaml
+  if [ "$mode" = "auto" ]; then
+    if grep -q '^redteam:' "$config_file" 2>/dev/null; then
+      mode="redteam"
+    else
+      mode="eval"
+    fi
+  fi
+
+  cd "$(dirname "$config_file")"
+
+  if [ "$mode" = "eval" ]; then
+    echo "==> Running Promptfoo eval with $(basename "$config_file")..."
+    npx promptfoo@latest eval -c "$(basename "$config_file")" --no-cache
+  else
+    echo "==> Running Promptfoo redteam with $(basename "$config_file")..."
+    npx promptfoo@latest redteam run -c "$(basename "$config_file")"
+  fi
+}
+
+if [ -n "$CUSTOM_CONFIG" ]; then
+  # Custom config mode: determine eval vs redteam
+  case "$ACTION" in
+    eval)    run_custom "$CUSTOM_CONFIG" "eval" ;;
+    redteam) run_custom "$CUSTOM_CONFIG" "redteam" ;;
+    *)       run_custom "$CUSTOM_CONFIG" "auto" ;;
+  esac
+else
+  # Standard mode
+  case "$ACTION" in
+    generate) generate_config ;;
+    run)      run_scan ;;
+    all|*)    generate_config && run_scan ;;
+  esac
+fi
 
 echo ""
 echo "==> Done! Run 'npx promptfoo@latest redteam report' to view the report."

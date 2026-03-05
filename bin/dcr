@@ -82,9 +82,13 @@ Scanning Commands:
   auth             Verify authentication against the target API
   humanbound ...   Run HumanBound red teaming (setup|init|test|full|logs|posture|guardrails)
   promptfoo        Generate config and run Promptfoo red team scan
+  promptfoo -c F   Run custom Promptfoo config (auto-detects eval/redteam)
+  promptfoo eval -c F   Run custom config in eval mode
+  promptfoo redteam -c F  Run custom config in redteam mode
   garak [args]     Run Garak probes (pass -p, -d flags through)
   pyrit-single     Run PyRIT single-turn adversarial prompts
   pyrit-multi      Run PyRIT multi-turn attack (needs OPENAI_API_KEY)
+  pyrit <script>   Run any PyRIT script from project's pyrit/ directory
   giskard          Run Giskard vulnerability scan
   scan [tool]      Run all tools (or a specific one)
 
@@ -460,6 +464,37 @@ case "$COMMAND" in
     fi
     cd "$PROJECT_DIR/pyrit"
     python3 multi_turn.py "$@"
+    ;;
+
+  pyrit)
+    # Run any PyRIT script from the project's pyrit/ directory
+    # Usage: dcr pyrit <script_name> [args...]
+    #   dcr pyrit advice_crescendo
+    #   dcr pyrit vulnerability_crescendo
+    PYRIT_SCRIPT="${1:-}"
+    if [ -z "$PYRIT_SCRIPT" ]; then
+      echo "Usage: dcr pyrit <script_name> [args...]"
+      echo ""
+      echo "Available scripts in $PROJECT_DIR/pyrit/:"
+      ls "$PROJECT_DIR/pyrit/"*.py 2>/dev/null | while read -r f; do
+        echo "  $(basename "$f" .py)"
+      done
+      exit 1
+    fi
+    shift
+    # Allow with or without .py extension
+    PYRIT_SCRIPT="${PYRIT_SCRIPT%.py}.py"
+    if [ ! -f "$PROJECT_DIR/pyrit/$PYRIT_SCRIPT" ]; then
+      echo "Error: pyrit/$PYRIT_SCRIPT not found in $PROJECT_DIR"
+      echo ""
+      echo "Available scripts:"
+      ls "$PROJECT_DIR/pyrit/"*.py 2>/dev/null | while read -r f; do
+        echo "  $(basename "$f" .py)"
+      done
+      exit 1
+    fi
+    cd "$PROJECT_DIR/pyrit"
+    python3 "$PYRIT_SCRIPT" "$@"
     ;;
 
   giskard)
