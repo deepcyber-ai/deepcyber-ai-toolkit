@@ -1,6 +1,8 @@
 # Guardrails, evaluation, and secondary tools
 deepteam==1.0.5
-llm-guard==0.3.16
+# NOTE: llm-guard requires Python <3.13 — skipped on Kali 2025.4 (Python 3.13).
+#   Use the Docker container for llm-guard, or install in a Python 3.12 venv.
+# llm-guard==0.3.16
 nemoguardrails==0.20.0
 deepeval==3.8.8
 guardrails-ai==0.9.1

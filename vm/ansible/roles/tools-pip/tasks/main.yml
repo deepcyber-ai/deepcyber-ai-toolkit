@@ -2,29 +2,73 @@
 # Python tool installation — mirrors the Dockerfile install order exactly.
 # Order matters for dependency resolution (especially scipy, giskard, art).
 
+# Copy requirements files to VM first (Ansible runs pip on the remote host,
+# so local role_path files aren't accessible there).
+- name: Create temporary requirements directory
+  ansible.builtin.file:
+    path: /tmp/pip-requirements
+    state: directory
+    mode: "0755"
+
+- name: Copy requirements files to VM
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "/tmp/pip-requirements/{{ item | basename }}"
+    mode: "0644"
+  loop:
+    - "{{ role_path }}/files/requirements-core.txt"
+    - "{{ role_path }}/files/requirements-guardrails.txt"
+    - "{{ role_path }}/files/requirements-shared.txt"
+
+- name: Ensure DNS resolution works (QEMU user-mode networking)
+  ansible.builtin.copy:
+    content: |
+      nameserver 10.0.2.3
+      nameserver 8.8.8.8
+      nameserver 1.1.1.1
+    dest: /etc/resolv.conf
+    mode: "0644"
+
 - name: Install core red teaming and ML security tools
   ansible.builtin.pip:
-    requirements: "{{ role_path }}/files/requirements-core.txt"
+    requirements: /tmp/pip-requirements/requirements-core.txt
     extra_args: "--no-cache-dir --break-system-packages"
   environment:
     DEBIAN_FRONTEND: noninteractive
+  retries: 3
+  delay: 15
+  register: result
+  until: result is not failed
 
-- name: Install scipy and giskard (order-sensitive)
+# NOTE: giskard requires Python <3.13 — skipped on Kali 2025.4 (Python 3.13).
+#   Use the Docker container for giskard, or install in a Python 3.12 venv.
+- name: Install scipy (dependency for several tools)
   ansible.builtin.pip:
     name:
-      - "scipy<1.14"
-      - "giskard[llm]==2.19.1"
+      - "scipy"
     extra_args: "--no-cache-dir --break-system-packages"
+  retries: 3
+  delay: 15
+  register: result
+  until: result is not failed
 
 - name: Install guardrails and evaluation tools
   ansible.builtin.pip:
-    requirements: "{{ role_path }}/files/requirements-guardrails.txt"
+    requirements: /tmp/pip-requirements/requirements-guardrails.txt
     extra_args: "--no-cache-dir --break-system-packages"
+  retries: 3
+  delay: 15
+  register: result
+  until: result is not failed
 
 - name: Install shared Python dependencies
   ansible.builtin.pip:
-    requirements: "{{ role_path }}/files/requirements-shared.txt"
+    requirements: /tmp/pip-requirements/requirements-shared.txt
     extra_args: "--no-cache-dir --break-system-packages"
+  retries: 3
+  delay: 15
+  register: result
+  until: result is not failed
 
 # Fix namespace collision: adversarial-robustness-toolbox installs as "art"
 # which shadows the ASCII-art "art" package that PyRIT needs (text2art).

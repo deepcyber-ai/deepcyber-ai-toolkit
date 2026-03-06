@@ -1,9 +1,10 @@
 # Core red teaming, evaluation, and ML security tools
 # Install order mirrors the Dockerfile for dependency resolution
+# NOTE: modelscan requires Python <3.13 — skipped on Kali 2025.4 (Python 3.13).
+#   Use the Docker container for modelscan, or install in a Python 3.12 venv.
 garak==0.14.0
 pyrit==0.11.0
 inspect-ai==0.3.184
-modelscan==0.8.8
 faiss-cpu==1.13.2
 adversarial-robustness-toolbox==1.20.1
 aif360==0.6.1

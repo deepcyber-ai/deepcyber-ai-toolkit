@@ -42,6 +42,10 @@
     update_cache: true
     upgrade: dist
     cache_valid_time: 3600
+  retries: 3
+  delay: 10
+  register: result
+  until: result is not failed
 
 - name: Install base development packages
   ansible.builtin.apt:
@@ -63,4 +67,32 @@
       - python3-dev
       - libffi-dev
       - libssl-dev
+      - rsync
+      - chromium
+      - firefox-esr
+    state: present
+  retries: 3
+  delay: 10
+  register: result
+  until: result is not failed
+
+# ---- VSCodium (open-source VS Code) ----
+
+- name: Download VSCodium .deb package
+  ansible.builtin.shell:
+    cmd: |
+      ARCH=$(dpkg --print-architecture)
+      # Get latest version tag from GitHub API
+      VER=$(wget -qO- https://api.github.com/repos/VSCodium/vscodium/releases/latest | grep -oP '"tag_name":\s*"\K[^"]+' || echo "1.109.51242")
+      wget -q "https://github.com/VSCodium/vscodium/releases/download/${VER}/codium_${VER}_${ARCH}.deb" \
+        -O /tmp/codium.deb
+    creates: /tmp/codium.deb
+  retries: 3
+  delay: 10
+  register: result
+  until: result is not failed
+
+- name: Install VSCodium from .deb
+  ansible.builtin.apt:
+    deb: /tmp/codium.deb
     state: present

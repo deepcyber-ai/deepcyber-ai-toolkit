@@ -117,16 +117,11 @@ source "qemu" "deepcyber" {
   # CDROM — use SCSI to avoid index conflict with virtio disk
   cdrom_interface = "virtio-scsi"
 
-  # Boot — use GRUB command line to boot installer with preseed
-  #
+  # Boot — use GRUB command line to boot installer with preseed.
   # The Kali ARM64 netinst ISO uses GRUB2 with no timeout (menu waits
   # indefinitely). We press 'c' to enter the GRUB command line and type
   # the full linux/initrd/boot commands with our preseed URL.
-  #
-  # IMPORTANT: We hardcode 10.0.2.2 (QEMU user-mode networking gateway)
-  # instead of {{ .HTTPIP }} because Packer resolves {{ .HTTPIP }} to
-  # the host's LAN IP, which is unreachable from inside the QEMU VM.
-  # The HTTP server binds to 0.0.0.0, so 10.0.2.2:port reaches it.
+  # Requires virtio-gpu-pci + usb-kbd in qemuargs for VNC input to work.
   boot_wait         = "30s"
   boot_key_interval = "50ms"
   boot_command      = [
@@ -161,7 +156,7 @@ source "qemu" "deepcyber" {
   # SSH connection (Ansible provisioner connects over this)
   ssh_username    = var.ssh_username
   ssh_password    = var.ssh_password
-  ssh_timeout     = "90m"
+  ssh_timeout     = "3h"
   ssh_port        = 22
   shutdown_command = "echo '${var.ssh_password}' | sudo -S shutdown -P now"
 
@@ -171,6 +166,16 @@ source "qemu" "deepcyber" {
   # QEMU arguments for aarch64
   qemuargs = [
     ["-cpu", "host"],
+    # GPU + keyboard so VNC boot commands and installer display work
+    ["-device", "virtio-gpu-pci"],
+    ["-device", "qemu-xhci"],
+    ["-device", "usb-kbd"],
+    # Attach CDROM via virtio-scsi (Packer creates the drive backend
+    # with if=none,id=cdrom0 but doesn't add the SCSI controller)
+    ["-device", "virtio-scsi-pci,id=scsi0"],
+    ["-device", "scsi-cd,drive=cdrom0"],
+    # Serial console to file for debugging
+    ["-serial", "file:serial.log"],
   ]
 }
 

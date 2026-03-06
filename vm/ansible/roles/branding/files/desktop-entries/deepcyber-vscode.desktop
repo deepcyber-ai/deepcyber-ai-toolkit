@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=VS Code
+Comment=Visual Studio Code (Codium) code editor
+Exec=codium %F
+Icon=codium
+Terminal=false
+Type=Application
+Categories=DeepCyber;DCDevelopment;
+MimeType=text/plain;

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=Chromium
+Comment=Chromium web browser
+Exec=chromium %U
+Icon=chromium
+Terminal=false
+Type=Application
+Categories=DeepCyber;DCDevelopment;
+MimeType=text/html;text/xml;application/xhtml+xml;

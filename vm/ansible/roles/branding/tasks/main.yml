@@ -1,5 +1,6 @@
 ---
-# DeepCyber VM branding: wallpapers, MOTD, PS1, Plymouth, LightDM, app menu
+# DeepCyber VM branding: wallpapers, MOTD, PS1, Plymouth, LightDM, app menu,
+# Kali debranding, GRUB, Firefox homepage, OS identity
 
 # ---- Wallpapers ----
 
@@ -73,7 +74,6 @@
     src: deepcyber-logo.png
     dest: /usr/share/plymouth/themes/deepcyber/deepcyber-logo.png
     mode: "0644"
-  when: lookup('fileglob', role_path + '/files/deepcyber-logo.png') | length > 0
 
 - name: Set DeepCyber as default Plymouth theme
   ansible.builtin.command:
@@ -100,7 +100,109 @@
     src: deepcyber-logo.png
     dest: /usr/share/pixmaps/deepcyber-logo.png
     mode: "0644"
-  when: lookup('fileglob', role_path + '/files/deepcyber-logo.png') | length > 0
+
+# ---- GRUB Rebranding ----
+
+- name: Set GRUB distributor to DeepCyber
+  ansible.builtin.lineinfile:
+    path: /etc/default/grub
+    regexp: '^GRUB_DISTRIBUTOR='
+    line: 'GRUB_DISTRIBUTOR="DeepCyber"'
+  failed_when: false
+
+- name: Rename Kali to DeepCyber in GRUB config
+  ansible.builtin.shell:
+    cmd: |
+      sed -i 's/Kali GNU\/Linux/DeepCyber GNU\/Linux/g' /boot/grub/grub.cfg 2>/dev/null || true
+      update-grub 2>/dev/null || true
+  changed_when: true
+  failed_when: false
+
+# ---- OS Identity ----
+
+- name: Replace Kali references in os-release
+  ansible.builtin.shell:
+    cmd: |
+      sed -i 's/Kali/DeepCyber/g' /etc/os-release 2>/dev/null || true
+      sed -i 's/kali/deepcyber/g' /etc/os-release 2>/dev/null || true
+  changed_when: true
+  failed_when: false
+
+- name: Update login banners
+  ansible.builtin.copy:
+    content: "DeepCyber GNU/Linux \\n \\l\n"
+    dest: "{{ item }}"
+    mode: "0644"
+  loop:
+    - /etc/issue
+    - /etc/issue.net
+
+# ---- Remove Kali Branding ----
+
+- name: Remove Kali-specific desktop entries
+  ansible.builtin.file:
+    path: "/usr/share/applications/{{ item }}"
+    state: absent
+  loop:
+    - kali-docs.desktop
+    - kali-bugs.desktop
+    - kali-forums.desktop
+    - kali-hidpi.desktop
+    - kali-tweaks.desktop
+    - kali-undercover.desktop
+    - kali-linux.desktop
+  failed_when: false
+
+- name: Remove Kali menu definitions
+  ansible.builtin.shell:
+    cmd: rm -f /etc/xdg/menus/applications-merged/kali-* 2>/dev/null || true
+  changed_when: true
+  failed_when: false
+
+# ---- Firefox Homepage ----
+
+- name: Create kali-defaults web directory
+  ansible.builtin.file:
+    path: /usr/share/kali-defaults/web
+    state: directory
+    mode: "0755"
+  failed_when: false
+
+- name: Replace Kali homepage with DeepCyber
+  ansible.builtin.copy:
+    content: |
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta http-equiv="refresh" content="0; url=https://deepcyber.ai" />
+        <title>DeepCyber</title>
+      </head>
+      <body>
+        <p>Redirecting to <a href="https://deepcyber.ai">deepcyber.ai</a>...</p>
+      </body>
+      </html>
+    dest: /usr/share/kali-defaults/web/homepage.html
+    mode: "0644"
+  failed_when: false
+
+- name: Set Firefox homepage via autoconfig
+  ansible.builtin.copy:
+    content: |
+      pref("general.config.filename", "mozilla.cfg");
+      pref("general.config.obscure_value", 0);
+    dest: /usr/lib/firefox-esr/defaults/pref/autoconfig.js
+    mode: "0644"
+  failed_when: false
+
+- name: Deploy Firefox homepage configuration
+  ansible.builtin.copy:
+    content: |
+      // DeepCyber Firefox configuration
+      defaultPref("browser.startup.homepage", "https://deepcyber.ai");
+      defaultPref("browser.startup.page", 1);
+    dest: /usr/lib/firefox-esr/mozilla.cfg
+    mode: "0644"
+  failed_when: false
 
 # ---- Desktop Wallpaper Configuration ----
 
@@ -186,7 +288,7 @@
     dest: /usr/share/applications/
     mode: "0644"
 
-# ---- XFCE Application Menu Categories ----
+# ---- Application Menu Structure ----
 
 - name: Create menu directory
   ansible.builtin.file:
@@ -221,6 +323,20 @@
               <Category>Evaluation</Category>
             </Include>
           </Menu>
+          <Menu>
+            <Name>Development</Name>
+            <Directory>deepcyber-development.directory</Directory>
+            <Include>
+              <Category>DCDevelopment</Category>
+            </Include>
+          </Menu>
+        </Menu>
+        <Menu>
+          <Name>Pentesting</Name>
+          <Directory>deepcyber-pentesting.directory</Directory>
+          <Include>
+            <Category>Pentesting</Category>
+          </Include>
         </Menu>
       </Menu>
     dest: /etc/xdg/menus/applications-merged/deepcyber.menu
@@ -238,7 +354,7 @@
       [Desktop Entry]
       Name=DeepCyber
       Comment=AI Red Team Toolkit
-      Icon=security-high
+      Icon=/usr/share/pixmaps/deepcyber-logo.png
       Type=Directory
     dest: /usr/share/desktop-directories/deepcyber.directory
     mode: "0644"
@@ -264,6 +380,50 @@
       Type=Directory
     dest: /usr/share/desktop-directories/deepcyber-evaluation.directory
     mode: "0644"
+
+- name: Deploy Development submenu directory entry
+  ansible.builtin.copy:
+    content: |
+      [Desktop Entry]
+      Name=Development
+      Comment=Development tools and environments
+      Icon=applications-development
+      Type=Directory
+    dest: /usr/share/desktop-directories/deepcyber-development.directory
+    mode: "0644"
+
+- name: Deploy Pentesting submenu directory entry
+  ansible.builtin.copy:
+    content: |
+      [Desktop Entry]
+      Name=Pentesting
+      Comment=Traditional penetration testing tools
+      Icon=applications-system
+      Type=Directory
+    dest: /usr/share/desktop-directories/deepcyber-pentesting.directory
+    mode: "0644"
+
+# ---- Recategorize Pentesting Tools ----
+
+- name: Add Pentesting category to security tool .desktop files
+  ansible.builtin.shell:
+    cmd: |
+      for f in /usr/share/applications/{{ item }}.desktop; do
+        [ -f "$f" ] && sed -i 's/^Categories=.*/&Pentesting;/' "$f" 2>/dev/null || true
+      done
+  loop:
+    - metasploit-framework
+    - hydra-gtk
+    - john
+    - hashcat
+    - medusa
+    - burpsuite
+    - zaproxy
+    - nmap
+    - tcpdump
+    - netcat-traditional
+  changed_when: true
+  failed_when: false
 
 # ---- Fix ownership ----
 

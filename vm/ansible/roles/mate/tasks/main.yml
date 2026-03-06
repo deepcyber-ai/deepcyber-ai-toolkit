@@ -7,6 +7,10 @@
       - kali-desktop-mate
     state: present
     update_cache: true
+  retries: 3
+  delay: 10
+  register: result
+  until: result is not failed
 
 - name: Install LightDM display manager
   ansible.builtin.apt:
@@ -15,6 +19,10 @@
       - lightdm-gtk-greeter
       - lightdm-gtk-greeter-settings
     state: present
+  retries: 3
+  delay: 10
+  register: result
+  until: result is not failed
 
 - name: Install MATE extras
   ansible.builtin.apt:
@@ -27,6 +35,10 @@
       - mate-system-monitor
       - mate-utils
     state: present
+  retries: 3
+  delay: 10
+  register: result
+  until: result is not failed
 
 - name: Set LightDM as default display manager
   ansible.builtin.debconf:

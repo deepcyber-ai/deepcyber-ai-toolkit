@@ -20,5 +20,3 @@
   ansible.builtin.command:
     cmd: msfdb init
     creates: /home/{{ deepcyber_user }}/.msf4/db
-  become: true
-  become_user: "{{ deepcyber_user }}"
