@@ -425,6 +425,22 @@
   changed_when: true
   failed_when: false
 
+# ---- XFCE Whisker Menu Rebranding ----
+
+- name: Replace Kali icon in Whisker Menu with DeepCyber logo
+  ansible.builtin.lineinfile:
+    path: /etc/xdg/xfce4/whiskermenu/defaults.rc
+    regexp: '^button-icon='
+    line: 'button-icon=/usr/share/pixmaps/deepcyber-logo.png'
+  failed_when: false
+
+- name: Clean Kali entries from Whisker Menu favorites
+  ansible.builtin.lineinfile:
+    path: /etc/xdg/xfce4/whiskermenu/defaults.rc
+    regexp: '^favorites='
+    line: 'favorites=exo-terminal-emulator.desktop,exo-file-manager.desktop,xfce-text-editor.desktop,exo-web-browser.desktop,deepcyber-docs.desktop,deepcyber-dcr.desktop'
+  failed_when: false
+
 # ---- Fix ownership ----
 
 - name: Fix ownership of desktop config
