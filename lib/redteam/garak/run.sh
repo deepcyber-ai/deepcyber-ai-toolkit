@@ -68,6 +68,17 @@ session_header = session_cfg.get("header", "")
 if session_header:
     headers[session_header] = "garak-run"
 
+resp_field = get_response_field(config)
+# Convert dot notation (content.parts.0.text) to JSONPath ($.content.parts[0].text)
+# Garak requires JSONPath for nested field traversal
+parts = resp_field.split(".")
+jsonpath = "$"
+for p in parts:
+    if p.isdigit():
+        jsonpath += "[" + p + "]"
+    else:
+        jsonpath += "." + p
+
 garak_config = {
     "rest": {
         "RestGenerator": {
@@ -77,7 +88,8 @@ garak_config = {
             "headers": headers,
             "req_template_json_object": req_body,
             "response_json": True,
-            "response_json_field": get_response_field(config),
+            "response_json_field": jsonpath,
+            "request_timeout": 120,
         }
     }
 }

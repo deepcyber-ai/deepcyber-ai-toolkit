@@ -92,6 +92,13 @@ Scanning Commands:
   giskard          Run Giskard vulnerability scan
   scan [tool]      Run all tools (or a specific one)
 
+Profile Commands:
+  profile              Show active LLM profiles (attacker + grader)
+  profile list         List all available profiles
+  profile use TYPE N   Switch attacker or grader profile
+  profile create TYPE N  Create a new profile (interactive)
+  profile off TYPE     Deactivate a profile (use .env defaults)
+
 AI Assistant Commands:
   ai [cli]         Launch an AI coding assistant (claude, gemini, or codex)
   ai setup         Configure API keys for AI assistants
@@ -215,6 +222,51 @@ _show_ai_status() {
       echo "  $f:  not installed"
     fi
   done
+}
+
+# ── Profile helpers ────────────────────────────────────────────────
+PROFILE_DIR="$HOME/.deepcyber/profiles"
+
+_mask_value() {
+  local val="$1" len=${#val}
+  if [ "$len" -le 8 ]; then
+    echo "***"
+  else
+    echo "${val:0:4}...${val: -4}"
+  fi
+}
+
+_show_profile_vars() {
+  local file="$1"
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ -z "$line" ]] && continue
+    [[ "$line" != *=* ]] && continue
+    local key="${line%%=*}" val="${line#*=}"
+    key=$(echo "$key" | xargs)
+    val=$(echo "$val" | xargs)
+    [ -z "$key" ] && continue
+    [ -z "$val" ] && continue
+    printf "  %-22s %s\n" "$key" "$(_mask_value "$val")"
+  done < "$file"
+}
+
+_show_active_profile() {
+  local type="$1" label="$2"
+  echo "$label:"
+  if [ -f "$PROFILE_DIR/active_${type}" ]; then
+    local name
+    name=$(cat "$PROFILE_DIR/active_${type}")
+    local file="$PROFILE_DIR/${type}/${name}.env"
+    if [ -f "$file" ]; then
+      echo "  Profile: $name"
+      _show_profile_vars "$file"
+    else
+      echo "  Profile: $name (file missing)"
+    fi
+  else
+    echo "  (none — using .env defaults)"
+  fi
 }
 
 case "$COMMAND" in
@@ -404,6 +456,216 @@ except:
     exec "$BIN_DIR/dcr" ai setup "$@"
     ;;
 
+  profile)
+    PROF_SUB="${1:-}"
+
+    case "$PROF_SUB" in
+      ""|show)
+        echo "LLM Profiles"
+        echo "───────────────────────────────────────"
+        _show_active_profile "attacker" "Attacker"
+        echo ""
+        _show_active_profile "grader" "Grader"
+        echo ""
+        echo "Commands: dcr profile list | use | create | edit | off"
+        ;;
+
+      list)
+        echo "Attacker profiles:"
+        if [ -d "$PROFILE_DIR/attacker" ]; then
+          _active=""
+          [ -f "$PROFILE_DIR/active_attacker" ] && _active=$(cat "$PROFILE_DIR/active_attacker")
+          for _f in "$PROFILE_DIR/attacker/"*.env; do
+            [ -f "$_f" ] || continue
+            _pname=$(basename "$_f" .env)
+            if [ "$_pname" = "$_active" ]; then
+              echo "  * $_pname  (active)"
+            else
+              echo "    $_pname"
+            fi
+          done
+        else
+          echo "  (none — create one with: dcr profile create attacker <name>)"
+        fi
+        echo ""
+        echo "Grader profiles:"
+        if [ -d "$PROFILE_DIR/grader" ]; then
+          _active=""
+          [ -f "$PROFILE_DIR/active_grader" ] && _active=$(cat "$PROFILE_DIR/active_grader")
+          for _f in "$PROFILE_DIR/grader/"*.env; do
+            [ -f "$_f" ] || continue
+            _pname=$(basename "$_f" .env)
+            if [ "$_pname" = "$_active" ]; then
+              echo "  * $_pname  (active)"
+            else
+              echo "    $_pname"
+            fi
+          done
+        else
+          echo "  (none — create one with: dcr profile create grader <name>)"
+        fi
+        ;;
+
+      use)
+        _type="${2:-}"
+        _pname="${3:-}"
+        if [ -z "$_type" ] || [ -z "$_pname" ]; then
+          echo "Usage: dcr profile use <attacker|grader> <profile-name>"
+          exit 1
+        fi
+        if [ "$_type" != "attacker" ] && [ "$_type" != "grader" ]; then
+          echo "Error: type must be 'attacker' or 'grader'"
+          exit 1
+        fi
+        _pfile="$PROFILE_DIR/${_type}/${_pname}.env"
+        if [ ! -f "$_pfile" ]; then
+          echo "Error: profile '$_pname' not found"
+          echo ""
+          echo "Available ${_type} profiles:"
+          ls "$PROFILE_DIR/${_type}/"*.env 2>/dev/null | while read -r _f; do
+            echo "  $(basename "$_f" .env)"
+          done
+          exit 1
+        fi
+        mkdir -p "$PROFILE_DIR"
+        echo "$_pname" > "$PROFILE_DIR/active_${_type}"
+        echo "Switched ${_type} profile to: $_pname"
+        echo ""
+        _show_profile_vars "$_pfile"
+        ;;
+
+      off)
+        _type="${2:-}"
+        if [ -z "$_type" ]; then
+          echo "Usage: dcr profile off <attacker|grader>"
+          exit 1
+        fi
+        if [ "$_type" != "attacker" ] && [ "$_type" != "grader" ]; then
+          echo "Error: type must be 'attacker' or 'grader'"
+          exit 1
+        fi
+        rm -f "$PROFILE_DIR/active_${_type}"
+        echo "Deactivated ${_type} profile (will use .env defaults)"
+        ;;
+
+      create)
+        _type="${2:-}"
+        _pname="${3:-}"
+        if [ -z "$_type" ] || [ -z "$_pname" ]; then
+          echo "Usage: dcr profile create <attacker|grader> <profile-name>"
+          exit 1
+        fi
+        if [ "$_type" != "attacker" ] && [ "$_type" != "grader" ]; then
+          echo "Error: type must be 'attacker' or 'grader'"
+          exit 1
+        fi
+        _pfile="$PROFILE_DIR/${_type}/${_pname}.env"
+        if [ -f "$_pfile" ]; then
+          echo "Profile '$_pname' already exists at $_pfile"
+          read -r -p "Overwrite? [y/N] " _yn
+          case "$_yn" in
+            [yY]*) ;;
+            *) echo "Aborted."; exit 0 ;;
+          esac
+        fi
+        mkdir -p "$PROFILE_DIR/${_type}"
+        echo "Creating ${_type} profile: $_pname"
+        echo ""
+        if [ "$_type" = "attacker" ]; then
+          read -r -p "  Endpoint URL (e.g. https://<pod>-8080.proxy.runpod.net/v1): " _url
+          read -r -p "  API key [deepcyber]: " _key
+          _key="${_key:-deepcyber}"
+          read -r -p "  Model name [attacker]: " _model
+          _model="${_model:-attacker}"
+          cat > "$_pfile" <<PROF
+# Attacker profile: $_pname
+ATTACKER_BASE_URL=$_url
+OPENAI_BASE_URL=$_url
+OPENAI_API_KEY=$_key
+ATTACKER_MODEL=$_model
+PROF
+        else
+          read -r -p "  API key (e.g. sk-...): " _key
+          read -r -p "  Model name [gpt-4o-mini]: " _model
+          _model="${_model:-gpt-4o-mini}"
+          cat > "$_pfile" <<PROF
+# Grader profile: $_pname
+GRADER_API_KEY=$_key
+GISKARD_MODEL=$_model
+PROF
+        fi
+        chmod 600 "$_pfile"
+        echo ""
+        echo "Saved: $_pfile"
+        echo ""
+        read -r -p "Activate this profile now? [Y/n] " _yn
+        case "$_yn" in
+          [nN]*) ;;
+          *)
+            echo "$_pname" > "$PROFILE_DIR/active_${_type}"
+            echo "Activated."
+            ;;
+        esac
+        ;;
+
+      edit)
+        _type="${2:-}"
+        _pname="${3:-}"
+        if [ -z "$_type" ] || [ -z "$_pname" ]; then
+          echo "Usage: dcr profile edit <attacker|grader> <profile-name>"
+          exit 1
+        fi
+        _pfile="$PROFILE_DIR/${_type}/${_pname}.env"
+        if [ ! -f "$_pfile" ]; then
+          echo "Error: profile '$_pname' not found at $_pfile"
+          exit 1
+        fi
+        ${EDITOR:-vi} "$_pfile"
+        ;;
+
+      delete)
+        _type="${2:-}"
+        _pname="${3:-}"
+        if [ -z "$_type" ] || [ -z "$_pname" ]; then
+          echo "Usage: dcr profile delete <attacker|grader> <profile-name>"
+          exit 1
+        fi
+        _pfile="$PROFILE_DIR/${_type}/${_pname}.env"
+        if [ ! -f "$_pfile" ]; then
+          echo "Error: profile '$_pname' not found"
+          exit 1
+        fi
+        rm "$_pfile"
+        if [ -f "$PROFILE_DIR/active_${_type}" ]; then
+          _current=$(cat "$PROFILE_DIR/active_${_type}")
+          if [ "$_current" = "$_pname" ]; then
+            rm "$PROFILE_DIR/active_${_type}"
+            echo "(was active — deactivated)"
+          fi
+        fi
+        echo "Deleted ${_type} profile: $_pname"
+        ;;
+
+      *)
+        cat <<'PROF_HELP'
+Usage: dcr profile [command]
+
+  show                           Show active profiles (default)
+  list                           List all profiles
+  use <attacker|grader> NAME     Switch active profile
+  create <attacker|grader> NAME  Create new profile (interactive)
+  edit <attacker|grader> NAME    Edit profile in $EDITOR
+  delete <attacker|grader> NAME  Delete a profile
+  off <attacker|grader>          Deactivate (use .env defaults)
+
+Profiles override .env values for attacker and grader LLMs.
+Stored in: ~/.deepcyber/profiles/
+PROF_HELP
+        ;;
+    esac
+    exit 0
+    ;;
+
   help)
     show_help
     exit 0
@@ -423,6 +685,18 @@ fi
 # ── Load .env from project dir ────────────────────────────────────
 if [ -f "$PROJECT_DIR/.env" ]; then
   set -a; source "$PROJECT_DIR/.env"; set +a
+fi
+
+# ── Source active LLM profiles (override .env) ──────────────────────
+if [ -f "$PROFILE_DIR/active_attacker" ]; then
+  _prof=$(cat "$PROFILE_DIR/active_attacker")
+  _prof_file="$PROFILE_DIR/attacker/${_prof}.env"
+  [ -f "$_prof_file" ] && { set -a; source "$_prof_file"; set +a; }
+fi
+if [ -f "$PROFILE_DIR/active_grader" ]; then
+  _prof=$(cat "$PROFILE_DIR/active_grader")
+  _prof_file="$PROFILE_DIR/grader/${_prof}.env"
+  [ -f "$_prof_file" ] && { set -a; source "$_prof_file"; set +a; }
 fi
 
 # ── Add DEEPCYBER_LIB to PYTHONPATH ─────────────────────────────────
@@ -498,7 +772,12 @@ case "$COMMAND" in
     ;;
 
   giskard)
-    python3 "$DEEPCYBER_LIB/giskard/scan.py" "$@"
+    # Giskard requires Python <3.13; use dedicated venv
+    GISKARD_PYTHON="python3"
+    if [ -x "$HOME/.local/share/giskard-venv/bin/python3" ]; then
+      GISKARD_PYTHON="$HOME/.local/share/giskard-venv/bin/python3"
+    fi
+    "$GISKARD_PYTHON" "$DEEPCYBER_LIB/giskard/scan.py" "$@"
     ;;
 
   scan)

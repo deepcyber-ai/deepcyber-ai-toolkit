@@ -17,6 +17,9 @@ import argparse
 import os
 import sys
 
+# Save grader key before any imports (litellm's dotenv may overwrite env vars).
+_grader_key = os.environ.get("GRADER_API_KEY")
+
 import pandas as pd
 import requests
 
@@ -32,6 +35,25 @@ from shared.config import (
 from shared.auth import get_auth_headers
 
 import giskard
+from giskard.llm.client import set_default_client
+
+# Configure Giskard's internal LLM for test generation and scoring.
+# litellm auto-loads .env which sets OPENAI_BASE_URL to RunPod.
+# We must create a client with explicit OpenAI settings to override.
+_giskard_model = os.environ.get("GISKARD_MODEL", "gpt-4o-mini")
+if _grader_key:
+    from giskard.llm.client.litellm import LiteLLMClient as _LiteLLMClient
+    _client = _LiteLLMClient(
+        model=_giskard_model,
+        completion_params={
+            "api_key": _grader_key,
+            "api_base": "https://api.openai.com/v1",
+        },
+    )
+    set_default_client(_client)
+else:
+    from giskard.llm.client import set_llm_model
+    set_llm_model(_giskard_model)
 
 
 def make_predict_fn(config):
@@ -46,6 +68,7 @@ def make_predict_fn(config):
         headers[session_header] = "giskard-scan"
 
     def predict(df: pd.DataFrame) -> list[str]:
+        import json as _json
         outputs = []
         for message in df["question"].values:
             try:
@@ -57,7 +80,15 @@ def make_predict_fn(config):
                     timeout=30,
                 )
                 resp.raise_for_status()
-                outputs.append(extract_response(resp.json(), config))
+                raw = extract_response(resp.json(), config)
+                # Unwrap double-encoded JSON (e.g. InvestAI nested payload)
+                if isinstance(raw, str) and raw.startswith("{"):
+                    try:
+                        inner = _json.loads(raw)
+                        raw = inner.get("message") or inner.get("error", raw)
+                    except _json.JSONDecodeError:
+                        pass
+                outputs.append(str(raw))
             except Exception as e:
                 outputs.append(f"[Error: {e}]")
         return outputs
