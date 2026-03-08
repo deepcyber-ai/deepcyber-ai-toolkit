@@ -243,6 +243,49 @@ cloudflared tunnel run my-project
 
 This gives you a stable subdomain that persists across restarts.
 
+### DeepCyber Named Tunnel Architecture
+
+For persistent infrastructure across the DeepCyber platform, two named tunnels share the `deepcyber-tunnel.com` domain:
+
+```
+                          deepcyber-tunnel.com
+                         ┌──────────────────────┐
+                         │     Cloudflare DNS    │
+                         └──────┬───────┬────────┘
+                                │       │
+               ┌────────────────┘       └────────────────┐
+               │                                         │
+  relay.deepcyber-tunnel.com              api.deepcyber-tunnel.com
+               │                          ssh.deepcyber-tunnel.com
+               │                                         │
+     deepcyber-relay tunnel               deepcyber-workstation tunnel
+               │                                         │
+  ┌────────────┴────────────┐           ┌────────────────┴────────────┐
+  │   Laptop (MacBook)      │           │   Workstation (RTX 4090)    │
+  │                         │           │                             │
+  │   Relay Proxy (:8443)   │           │   vLLM API (:8080)          │
+  │   → Internal client API │           │   SSH (:22)                 │
+  └─────────────────────────┘           └─────────────────────────────┘
+```
+
+| Subdomain | Tunnel | Service |
+|-----------|--------|---------|
+| `relay.deepcyber-tunnel.com` | `deepcyber-relay` | Relay proxy on laptop → internal client API |
+| `api.deepcyber-tunnel.com` | `deepcyber-workstation` | Self-hosted vLLM attacker model |
+| `ssh.deepcyber-tunnel.com` | `deepcyber-workstation` | SSH access to workstation |
+
+#### Laptop setup (relay proxy for HumanBound, Promptfoo, etc.)
+
+```bash
+bash scripts/relay/setup-tunnel-laptop.sh
+```
+
+#### Workstation setup (self-hosted LLM + SSH)
+
+```bash
+bash scripts/relay/setup-tunnel-workstation.sh
+```
+
 ## Running Outside Docker
 
 The relay can also run directly on the host (no container needed):

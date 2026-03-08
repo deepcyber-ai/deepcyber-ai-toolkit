@@ -39,6 +39,7 @@ design/*
 
 # Live projects (contain credentials)
 projects/foodie-ai/
+projects/invest-ai/
 
 # VM build outputs
 vm/packer/output-*/
