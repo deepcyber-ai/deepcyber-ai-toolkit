@@ -25,7 +25,7 @@ import os
 import subprocess
 import sys
 
-from shared.config import load_target_config, get_api_url, get_request_body, get_project_dir, load_policy, build_policy_text
+from shared.config import load_target_config, get_api_url, get_request_body, get_project_dir, load_policy, build_policy_text, build_init_request
 from shared.auth import get_auth_headers
 
 
@@ -97,9 +97,11 @@ def cmd_setup(_args):
     if session_header:
         headers[session_header] = "humanbound-run"
 
-    # Build init payload (session reset command)
-    init_command = session_cfg.get("init_command", "")
-    init_payload = get_request_body(init_command, config) if init_command else {}
+    # Build init payload from session.init_payload or legacy init_command
+    init_payload = build_init_request(config) or {}
+    if not init_payload:
+        init_command = session_cfg.get("init_command", "")
+        init_payload = get_request_body(init_command, config) if init_command else {}
 
     # Build chat payload with $PROMPT placeholder (HumanBound replaces it)
     chat_payload = get_request_body("$PROMPT", config)

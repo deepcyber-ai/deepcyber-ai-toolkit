@@ -31,6 +31,7 @@ from shared.config import (
     extract_response,
     load_policy,
     build_policy_text,
+    ensure_session,
 )
 from shared.auth import get_auth_headers
 
@@ -111,8 +112,9 @@ def main():
     )
     args = parser.parse_args()
 
-    # Load config
+    # Load config and ensure session
     config = load_target_config()
+    ensure_session(config)
     target_name = config["target"]["name"]
     description = config["target"].get("description", "")
     api_url = get_api_url(config)

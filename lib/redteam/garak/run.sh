@@ -36,10 +36,11 @@ REST_API_KEY=$(python3 -c '
 import sys, os, json
 sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
 os.environ.setdefault("PROJECT_DIR", os.environ.get("PROJECT_DIR", ""))
-from shared.config import load_target_config, get_api_url, get_response_field, load_policy, build_policy_text
+from shared.config import load_target_config, get_api_url, get_response_field, load_policy, build_policy_text, ensure_session
 from shared.auth import get_token
 
 config = load_target_config()
+ensure_session(config)
 api_url = get_api_url(config)
 token = get_token(config)
 

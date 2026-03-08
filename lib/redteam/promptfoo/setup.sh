@@ -59,10 +59,11 @@ eval "$(python3 -c '
 import sys, os, json
 sys.path.insert(0, os.environ["DEEPCYBER_LIB"])
 os.environ.setdefault("PROJECT_DIR", os.environ.get("PROJECT_DIR", ""))
-from shared.config import load_target_config, get_api_url, get_response_field
+from shared.config import load_target_config, get_api_url, get_response_field, ensure_session
 from shared.auth import get_token
 
 config = load_target_config()
+session_id = ensure_session(config)
 api_url = get_api_url(config)
 token = get_token(config)
 resp_field = get_response_field(config)
@@ -81,6 +82,7 @@ print(f"export TARGET_NAME=\"{name}\"")
 print(f"export TARGET_DESCRIPTION={json.dumps(description)}")
 print(f"export TARGET_BODY_TEMPLATE={json.dumps(body_template)}")
 print(f"export TARGET_SESSION_HEADER=\"{session_header}\"")
+print(f"export TARGET_SESSION_ID=\"{session_id or ''}\"")
 ')"
 
 echo "==> Target: $TARGET_NAME"
