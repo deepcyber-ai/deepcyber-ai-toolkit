@@ -248,7 +248,7 @@ def ensure_session(config=None):
     headers = get_auth_headers(config)
     headers["Content-Type"] = config["request"].get("content_type", "application/json")
 
-    print(f"==> Initializing session at {api_url}...")
+    print(f"==> Initializing session at {api_url}...", file=sys.stderr)
 
     try:
         resp = _requests.post(api_url, json=init_body, headers=headers, timeout=30)
@@ -275,9 +275,9 @@ def ensure_session(config=None):
             user_id = inner.get("user_id")
             welcome = inner.get("welcome_message", "")
 
-            print(f"    Session ID: {_SESSION_ID}")
+            print(f"    Session ID: {_SESSION_ID}", file=sys.stderr)
             if welcome:
-                print(f"    Welcome: {welcome[:100]}")
+                print(f"    Welcome: {welcome[:100]}", file=sys.stderr)
 
             # Update config in-place for all subsequent calls
             try:
