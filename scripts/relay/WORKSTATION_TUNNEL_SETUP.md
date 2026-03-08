@@ -151,7 +151,7 @@ brew install cloudflared
 Add to `~/.ssh/config`:
 
 ```
-Host deepcyber
+Host deepcyber-tunnel
   HostName ssh.deepcyber-relay.uk
   ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
   User yanni
@@ -160,7 +160,7 @@ Host deepcyber
 Then connect:
 
 ```bash
-ssh deepcyber
+ssh deepcyber-tunnel
 ```
 
 ---
@@ -171,7 +171,7 @@ From your MacBook:
 
 ```bash
 # SSH
-ssh deepcyber "hostname && nvidia-smi | head -5"
+ssh deepcyber-tunnel "hostname && nvidia-smi | head -5"
 
 # List models
 curl https://api.deepcyber-relay.uk/v1/models \
