@@ -82,7 +82,8 @@ print(f"export TARGET_NAME=\"{name}\"")
 print(f"export TARGET_DESCRIPTION={json.dumps(description)}")
 print(f"export TARGET_BODY_TEMPLATE={json.dumps(body_template)}")
 print(f"export TARGET_SESSION_HEADER=\"{session_header}\"")
-print(f"export TARGET_SESSION_ID=\"{session_id or ''}\"")
+sid = session_id if session_id else ""
+print(f"export TARGET_SESSION_ID=\"{sid}\"")
 ')"
 
 echo "==> Target: $TARGET_NAME"
