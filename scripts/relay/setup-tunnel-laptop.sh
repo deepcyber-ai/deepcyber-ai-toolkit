@@ -7,15 +7,15 @@ set -e
 # Sets up a persistent Cloudflare Tunnel on your MacBook so that cloud tools
 # (HumanBound, Promptfoo, etc.) can reach the relay proxy at a stable URL:
 #
-#   https://relay.deepcyber-tunnel.com
+#   https://relay.deepcyber-relay.uk
 #
 # Prerequisites:
-#   - Cloudflare account with deepcyber-tunnel.com added
+#   - Cloudflare account with deepcyber-relay.uk added
 #   - brew install cloudflared  (macOS)
 # =============================================================================
 
 TUNNEL_NAME="deepcyber-relay"
-DOMAIN="deepcyber-tunnel.com"
+DOMAIN="deepcyber-relay.uk"
 SUBDOMAIN="relay.${DOMAIN}"
 RELAY_PORT="${RELAY_PORT:-8443}"
 

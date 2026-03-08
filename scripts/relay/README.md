@@ -245,18 +245,18 @@ This gives you a stable subdomain that persists across restarts.
 
 ### DeepCyber Named Tunnel Architecture
 
-For persistent infrastructure across the DeepCyber platform, two named tunnels share the `deepcyber-tunnel.com` domain:
+For persistent infrastructure across the DeepCyber platform, two named tunnels share the `deepcyber-relay.uk` domain:
 
 ```
-                          deepcyber-tunnel.com
+                          deepcyber-relay.uk
                          ┌──────────────────────┐
                          │     Cloudflare DNS    │
                          └──────┬───────┬────────┘
                                 │       │
                ┌────────────────┘       └────────────────┐
                │                                         │
-  relay.deepcyber-tunnel.com              api.deepcyber-tunnel.com
-               │                          ssh.deepcyber-tunnel.com
+  relay.deepcyber-relay.uk              api.deepcyber-relay.uk
+               │                          ssh.deepcyber-relay.uk
                │                                         │
      deepcyber-relay tunnel               deepcyber-workstation tunnel
                │                                         │
@@ -270,9 +270,9 @@ For persistent infrastructure across the DeepCyber platform, two named tunnels s
 
 | Subdomain | Tunnel | Service |
 |-----------|--------|---------|
-| `relay.deepcyber-tunnel.com` | `deepcyber-relay` | Relay proxy on laptop → internal client API |
-| `api.deepcyber-tunnel.com` | `deepcyber-workstation` | Self-hosted vLLM attacker model |
-| `ssh.deepcyber-tunnel.com` | `deepcyber-workstation` | SSH access to workstation |
+| `relay.deepcyber-relay.uk` | `deepcyber-relay` | Relay proxy on laptop → internal client API |
+| `api.deepcyber-relay.uk` | `deepcyber-workstation` | Self-hosted vLLM attacker model |
+| `ssh.deepcyber-relay.uk` | `deepcyber-workstation` | SSH access to workstation |
 
 #### Laptop setup (relay proxy for HumanBound, Promptfoo, etc.)
 

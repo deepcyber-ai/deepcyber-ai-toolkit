@@ -1,6 +1,6 @@
 # DeepCyber Workstation — Cloudflare Tunnel Setup
 
-Self-hosted vLLM API + SSH access via `deepcyber-tunnel.com`.
+Self-hosted vLLM API + SSH access via `deepcyber-relay.uk`.
 
 ```
 MacBook ──> Cloudflare ──> deepcyber-workstation tunnel ──> Workstation (RTX 4090)
@@ -34,7 +34,7 @@ cloudflared tunnel login
 ```
 
 - A browser window opens
-- Select **deepcyber-tunnel.com** as the zone
+- Select **deepcyber-relay.uk** as the zone
 - Certificate saved to `~/.cloudflared/cert.pem`
 
 If no browser available, copy the URL it prints and open it on another machine.
@@ -67,9 +67,9 @@ tunnel: $TUNNEL_ID
 credentials-file: /home/yanni/.cloudflared/$TUNNEL_ID.json
 
 ingress:
-  - hostname: api.deepcyber-tunnel.com
+  - hostname: api.deepcyber-relay.uk
     service: http://localhost:8080
-  - hostname: ssh.deepcyber-tunnel.com
+  - hostname: ssh.deepcyber-relay.uk
     service: ssh://localhost:22
   - service: http_status:404
 EOF
@@ -86,8 +86,8 @@ cat ~/.cloudflared/config.yml
 ## Step 5: Add DNS records
 
 ```bash
-cloudflared tunnel route dns deepcyber-workstation api.deepcyber-tunnel.com
-cloudflared tunnel route dns deepcyber-workstation ssh.deepcyber-tunnel.com
+cloudflared tunnel route dns deepcyber-workstation api.deepcyber-relay.uk
+cloudflared tunnel route dns deepcyber-workstation ssh.deepcyber-relay.uk
 ```
 
 This creates CNAME records in Cloudflare pointing to the tunnel.
@@ -103,7 +103,7 @@ cloudflared tunnel run deepcyber-workstation
 Leave it running. In another terminal:
 
 ```bash
-curl https://api.deepcyber-tunnel.com/v1/models -H "Authorization: Bearer deepcyber"
+curl https://api.deepcyber-relay.uk/v1/models -H "Authorization: Bearer deepcyber"
 ```
 
 Expected response:
@@ -152,7 +152,7 @@ Add to `~/.ssh/config`:
 
 ```
 Host deepcyber
-  HostName ssh.deepcyber-tunnel.com
+  HostName ssh.deepcyber-relay.uk
   ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
   User yanni
 ```
@@ -174,11 +174,11 @@ From your MacBook:
 ssh deepcyber "hostname && nvidia-smi | head -5"
 
 # List models
-curl https://api.deepcyber-tunnel.com/v1/models \
+curl https://api.deepcyber-relay.uk/v1/models \
   -H "Authorization: Bearer deepcyber"
 
 # Chat test
-curl https://api.deepcyber-tunnel.com/v1/chat/completions \
+curl https://api.deepcyber-relay.uk/v1/chat/completions \
   -H "Authorization: Bearer deepcyber" \
   -H "Content-Type: application/json" \
   -d '{"model":"attacker","messages":[{"role":"user","content":"Hello"}]}'
@@ -191,7 +191,7 @@ curl https://api.deepcyber-tunnel.com/v1/chat/completions \
 Set in your `.env` or tool config:
 
 ```bash
-OPENAI_API_BASE=https://api.deepcyber-tunnel.com/v1
+OPENAI_API_BASE=https://api.deepcyber-relay.uk/v1
 OPENAI_API_KEY=deepcyber
 ```
 
@@ -225,7 +225,7 @@ nvidia-smi
 | Issue | Fix |
 |-------|-----|
 | `cloudflared tunnel login` no browser | Copy the URL and open on another machine |
-| DNS not resolving | Wait 1-2 minutes for propagation, then `dig api.deepcyber-tunnel.com` |
+| DNS not resolving | Wait 1-2 minutes for propagation, then `dig api.deepcyber-relay.uk` |
 | API returns 502 | vLLM container not running: `docker ps` then `docker start vllm-secure` |
 | SSH hangs | Check `cloudflared` is installed on MacBook: `brew install cloudflared` |
 | Tunnel not starting after reboot | `sudo systemctl enable cloudflared` |

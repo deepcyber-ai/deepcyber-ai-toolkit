@@ -7,17 +7,17 @@ set -e
 # Sets up a persistent Cloudflare Tunnel on the DeepCyber workstation (RTX 4090)
 # exposing the self-hosted vLLM API and SSH access at stable URLs:
 #
-#   https://api.deepcyber-tunnel.com   → vLLM API (port 8080)
-#   ssh.deepcyber-tunnel.com           → SSH access (port 22)
+#   https://api.deepcyber-relay.uk   → vLLM API (port 8080)
+#   ssh.deepcyber-relay.uk           → SSH access (port 22)
 #
 # Prerequisites:
-#   - Cloudflare account with deepcyber-tunnel.com added
+#   - Cloudflare account with deepcyber-relay.uk added
 #   - Docker with GPU support installed
 #   - vllm-secure container running on port 8080
 # =============================================================================
 
 TUNNEL_NAME="deepcyber-workstation"
-DOMAIN="deepcyber-tunnel.com"
+DOMAIN="deepcyber-relay.uk"
 API_SUBDOMAIN="api.${DOMAIN}"
 SSH_SUBDOMAIN="ssh.${DOMAIN}"
 API_PORT="${API_PORT:-8080}"
