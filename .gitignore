@@ -1,5 +1,6 @@
 # Results and output
 results/
+audit_logs/
 
 # Environment and secrets
 .env
